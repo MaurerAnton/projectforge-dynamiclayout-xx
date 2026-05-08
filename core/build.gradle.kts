@@ -17,9 +17,6 @@ kotlin {
     }
 
     linuxX64()
-    macosX64()
-    macosArm64()
-    mingwX64()
     linuxArm64()
     js(IR) {
         browser()
@@ -52,9 +49,6 @@ kotlin {
         }
 
         linuxX64().compilations["main"].defaultSourceSet.dependsOn(nativeMain)
-        macosX64().compilations["main"].defaultSourceSet.dependsOn(nativeMain)
-        macosArm64().compilations["main"].defaultSourceSet.dependsOn(nativeMain)
-        mingwX64().compilations["main"].defaultSourceSet.dependsOn(nativeMain)
         linuxArm64().compilations["main"].defaultSourceSet.dependsOn(nativeMain)
     }
 }
