@@ -1,4 +1,5 @@
 *.jar
+!core/gradle/wrapper/gradle-wrapper.jar
 *.klib
 *.kexe
 build/
