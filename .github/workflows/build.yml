@@ -84,6 +84,37 @@ jobs:
           ./gradlew jvmJar
           java -Dorg.dynamiclayout.test=1 -jar build/libs/core-jvm-*.jar 2>&1 || true
 
+  build-native:
+    name: Native debug
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: core
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: List available Gradle tasks
+        run: ./gradlew tasks --group="build" --all 2>&1 | grep -i "native\|konan\|linuxX64" | head -20
+
+      - name: Check Kotlin/Native compiler download
+        run: |
+          ./gradlew compileKotlinLinuxX64 --stacktrace --info 2>&1 | tail -40
+        continue-on-error: true
+
+      - name: Upload native artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dynamiclayout-linux-x64
+          path: core/build/bin/*/debug/*.klib
+
   react:
     name: React
     runs-on: ubuntu-latest
