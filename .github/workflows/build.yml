@@ -44,7 +44,6 @@ jobs:
       matrix:
         target:
           - linux_x64
-          - linux_arm64
     defaults:
       run:
         working-directory: core

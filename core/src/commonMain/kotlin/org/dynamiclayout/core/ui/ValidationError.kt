@@ -5,7 +5,6 @@ data class ValidationError(
     var messageId: String? = null
 ) {
     companion object {
-        @JvmStatic
         fun create(message: String, fieldId: String? = null, messageId: String? = null): ValidationError {
             return ValidationError(message = message, fieldId = fieldId, messageId = messageId)
         }
