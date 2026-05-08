@@ -5,6 +5,10 @@ plugins {
 group = "org.dynamiclayout"
 version = "0.1.0"
 
+repositories {
+    mavenCentral()
+}
+
 kotlin {
     jvm {
         compilations.all {
