@@ -2,12 +2,7 @@ name: Build DynamicLayout Core
 
 on:
   push:
-    branches: [main, develop]
-    paths:
-      - 'core/**'
-      - '.github/workflows/build.yml'
-  pull_request:
-    branches: [main]
+    branches: [main, master, develop]
     paths:
       - 'core/**'
   workflow_dispatch:
