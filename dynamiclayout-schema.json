@@ -1,0 +1,289 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dynamiclayout.org/schemas/ui-layout.schema.json",
+  "title": "DynamicLayout UILayout",
+  "description": "JSON Schema for DynamicLayout Server-Driven UI format. Server generates this JSON, React DynamicRenderer consumes it.",
+  "type": "object",
+  "required": ["ui"],
+  "properties": {
+    "data": {
+      "description": "Entity data (any JSON object or null for static pages)",
+      "type": ["object", "null"]
+    },
+    "ui": {
+      "type": "object",
+      "required": ["title", "layout", "uid", "translations", "userAccess"],
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Page title (i18n key or literal prefixed with ')"
+        },
+        "uid": {
+          "type": "string",
+          "description": "Unique layout ID",
+          "pattern": "^layout\\d+$"
+        },
+        "layout": {
+          "type": "array",
+          "description": "Main layout elements tree",
+          "items": { "$ref": "#/$defs/UIElement" }
+        },
+        "actions": {
+          "type": "array",
+          "description": "Action buttons rendered at the bottom",
+          "items": { "$ref": "#/$defs/UIElement" }
+        },
+        "layoutBelowActions": {
+          "type": "array",
+          "description": "Elements rendered below action buttons",
+          "items": { "$ref": "#/$defs/UIElement" }
+        },
+        "pageMenu": {
+          "type": "array",
+          "description": "Page menu items",
+          "items": { "$ref": "#/$defs/PageMenuItem" }
+        },
+        "namedContainers": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/NamedContainer" }
+        },
+        "translations": {
+          "type": "object",
+          "description": "i18n translation map (key → translated string)",
+          "additionalProperties": { "type": "string" }
+        },
+        "userAccess": { "$ref": "#/$defs/UserAccess" },
+        "showHistory": { "type": "boolean" },
+        "hideSearchFilter": { "type": "boolean" },
+        "excelExportSupported": { "type": "boolean" },
+        "multiSelectionSupported": { "type": "boolean" },
+        "watchFields": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Field IDs that trigger re-fetch on change"
+        },
+        "historyBackButton": { "type": ["string", "null"] },
+        "restBaseUrl": { "type": ["string", "null"] }
+      }
+    },
+    "serverData": {
+      "type": "object",
+      "properties": {
+        "i18n": {
+          "type": "object",
+          "properties": {
+            "locale": { "type": "string" }
+          }
+        }
+      }
+    },
+    "variables": {
+      "type": ["object", "null"],
+      "description": "Arbitrary variables passed between actions"
+    }
+  },
+  "$defs": {
+    "UIElement": {
+      "type": "object",
+      "required": ["type", "key"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Element type discriminator. Determines which React component renders this element.",
+          "enum": [
+            "AG_GRID", "AG_GRID_LIST_PAGE", "ALERT", "ATTACHMENT_LIST",
+            "BADGE", "BADGE_LIST", "BUTTON", "CHECKBOX", "COL",
+            "CREATABLE_SELECT", "CUSTOMIZED", "DROP_AREA", "EDITOR",
+            "FIELDSET", "FRAGMENT", "GROUP", "INLINE_GROUP", "INPUT",
+            "LABEL", "LIST", "NAMED_CONTAINER", "PROGRESS", "RADIOBUTTON",
+            "RATING", "READONLY_FIELD", "ROW", "SELECT", "SPACER",
+            "TABLE", "TABLE_LIST_PAGE", "TEXTAREA"
+          ]
+        },
+        "key": {
+          "type": "string",
+          "description": "Unique element key for React list rendering",
+          "pattern": "^(el-|nc-)\\d+$"
+        },
+        "cssClass": { "type": "string", "description": "Additional CSS class" }
+      },
+      "allOf": [
+        { "$ref": "#/$defs/ContainerFields" },
+        { "$ref": "#/$defs/FieldFields" },
+        { "$ref": "#/$defs/DisplayFields" },
+        { "$ref": "#/$defs/ButtonFields" },
+        { "$ref": "#/$defs/TableFields" }
+      ]
+    },
+
+    "ContainerFields": {
+      "if": {
+        "properties": { "type": { "enum": ["ROW", "COL", "GROUP", "FRAGMENT", "INLINE_GROUP", "FIELDSET", "NAMED_CONTAINER", "LIST"] } }
+      },
+      "then": {
+        "properties": {
+          "content": {
+            "type": "array",
+            "description": "Child elements",
+            "items": { "$ref": "#/$defs/UIElement" }
+          },
+          "length": { "$ref": "#/$defs/UILength" },
+          "offset": { "$ref": "#/$defs/UILength" },
+          "collapseTitle": { "type": "string" }
+        }
+      }
+    },
+
+    "FieldFields": {
+      "if": {
+        "properties": { "type": { "enum": ["INPUT", "TEXTAREA", "CHECKBOX", "SELECT", "CREATABLE_SELECT", "RADIOBUTTON", "RATING", "READONLY_FIELD"] } }
+      },
+      "then": {
+        "properties": {
+          "id": { "type": "string" },
+          "label": { "type": "string" },
+          "dataType": {
+            "type": "string",
+            "enum": ["STRING", "DATE", "TIMESTAMP", "TIME", "INT", "LONG", "DECIMAL", "NUMBER", "AMOUNT", "BOOLEAN", "PASSWORD", "USER", "GROUP", "EMPLOYEE", "TASK", "COST1", "COST2", "KONTO", "LOCALE", "TIMEZONE", "PICTURE", "CUSTOMIZED"]
+          },
+          "required": { "type": "boolean" },
+          "maxLength": { "type": "integer" },
+          "focus": { "type": "boolean" },
+          "tooltip": { "type": "string" },
+          "additionalLabel": { "type": "string" }
+        },
+        "required": ["id"]
+      }
+    },
+
+    "DisplayFields": {
+      "if": {
+        "properties": { "type": { "enum": ["LABEL", "ALERT", "BADGE", "BADGE_LIST", "SPACER", "PROGRESS"] } }
+      },
+      "then": {
+        "properties": {
+          "title": { "type": "string" },
+          "color": { "type": "string" },
+          "icon": {
+            "type": "array",
+            "items": { "type": "string" },
+            "minItems": 2,
+            "maxItems": 2
+          }
+        }
+      }
+    },
+
+    "ButtonFields": {
+      "if": {
+        "properties": { "type": { "const": "BUTTON" } }
+      },
+      "then": {
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "color": { "type": "string" },
+          "outline": { "type": "boolean" },
+          "default": { "type": "boolean" },
+          "disabled": { "type": "boolean" },
+          "confirmMessage": { "type": "string" },
+          "responseAction": { "$ref": "#/$defs/ResponseAction" }
+        }
+      }
+    },
+
+    "TableFields": {
+      "if": {
+        "properties": { "type": { "enum": ["TABLE", "TABLE_LIST_PAGE"] } }
+      },
+      "then": {
+        "properties": {
+          "columns": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "string" },
+                "title": { "type": "string" },
+                "dataType": { "type": "string" },
+                "sortable": { "type": "boolean" },
+                "formatter": { "type": "string" }
+              },
+              "required": ["id"]
+            }
+          }
+        }
+      }
+    },
+
+    "UILength": {
+      "type": "object",
+      "description": "Bootstrap grid column size (1-12 for each breakpoint)",
+      "properties": {
+        "xs": { "type": "integer", "minimum": 1, "maximum": 12 },
+        "sm": { "type": "integer", "minimum": 1, "maximum": 12 },
+        "md": { "type": "integer", "minimum": 1, "maximum": 12 },
+        "lg": { "type": "integer", "minimum": 1, "maximum": 12 },
+        "xl": { "type": "integer", "minimum": 1, "maximum": 12 }
+      }
+    },
+
+    "NamedContainer": {
+      "type": "object",
+      "required": ["type", "key", "id", "content"],
+      "properties": {
+        "type": { "const": "NAMED_CONTAINER" },
+        "key": { "type": "string", "pattern": "^nc-\\d+$" },
+        "id": { "type": "string" },
+        "content": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/UIElement" }
+        }
+      }
+    },
+
+    "PageMenuItem": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "url": { "type": "string" }
+      }
+    },
+
+    "UserAccess": {
+      "type": "object",
+      "description": "User permissions for the current page. Determines which action buttons are shown.",
+      "properties": {
+        "history": { "type": "boolean" },
+        "insert": { "type": "boolean" },
+        "update": { "type": "boolean" },
+        "delete": { "type": "boolean" },
+        "cancel": { "type": "boolean" },
+        "editHistoryComments": { "type": "boolean" }
+      }
+    },
+
+    "ResponseAction": {
+      "type": "object",
+      "description": "Action to execute on the client after a button press",
+      "properties": {
+        "url": { "type": "string" },
+        "targetType": {
+          "type": "string",
+          "enum": ["REDIRECT", "DOWNLOAD", "UPDATE", "GET", "PUT", "POST", "DELETE", "MODAL", "CLOSE_MODAL", "RELOAD", "NOTHING", "TOAST", "CHECK_AUTHENTICATION"]
+        },
+        "merge": { "type": "boolean" },
+        "message": {
+          "type": "object",
+          "properties": {
+            "i18nKey": { "type": "string" },
+            "message": { "type": "string" },
+            "technicalMessage": { "type": "string" },
+            "color": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,32 @@
+import React from 'react';
+import DynamicLayoutContext from '../../context';
+
+function DynamicTextArea({ id, label, required, maxLength, rows, maxRows, tooltip }) {
+    const { data, setData } = React.useContext(DynamicLayoutContext);
+    const value = data && data[id];
+
+    return (
+        <div style={{ marginBottom: '12px' }}>
+            {label && <label htmlFor={id} style={{ display: 'block', marginBottom: '4px', fontWeight: 500 }}>{label}</label>}
+            <textarea
+                id={id}
+                value={value || ''}
+                rows={rows || 3}
+                maxLength={maxLength || undefined}
+                onChange={(e) => setData({ [id]: e.target.value })}
+                style={{
+                    width: '100%',
+                    padding: '6px 12px',
+                    fontSize: '1rem',
+                    border: '1px solid #ced4da',
+                    borderRadius: '4px',
+                    resize: 'vertical',
+                    boxSizing: 'border-box',
+                }}
+            />
+            {tooltip && <small style={{ color: '#888' }}>{tooltip}</small>}
+        </div>
+    );
+}
+
+export default React.memo(DynamicTextArea);

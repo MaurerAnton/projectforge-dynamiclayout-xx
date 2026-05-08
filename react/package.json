@@ -1,0 +1,51 @@
+{
+  "name": "@dynamiclayout/react",
+  "version": "0.1.0",
+  "description": "React renderer for DynamicLayout Server-Driven UI JSON format",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
+    },
+    "./components/*": {
+      "import": "./dist/components/*.js",
+      "types": "./dist/components/*.d.ts"
+    }
+  },
+  "files": [
+    "dist/"
+  ],
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch",
+    "prepublishOnly": "npm run build"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "reactstrap": "^9.0.0"
+  },
+  "dependencies": {
+    "prop-types": "^15.8.0",
+    "classnames": "^2.3.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.0",
+    "vite": "^5.0.0",
+    "@vitejs/plugin-react": "^4.0.0"
+  },
+  "keywords": [
+    "dynamic-layout",
+    "server-driven-ui",
+    "sdui",
+    "react",
+    "form",
+    "layout"
+  ],
+  "license": "GPL-3.0-only"
+}

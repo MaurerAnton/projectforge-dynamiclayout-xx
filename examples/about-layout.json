@@ -1,0 +1,22 @@
+{
+  "ui": {
+    "title": "'About ProjectForge",
+    "uid": "layout1712345678901",
+    "layout": [
+      {
+        "type": "FIELDSET",
+        "key": "el-1",
+        "title": "'Info",
+        "content": [
+          { "type": "LABEL", "key": "el-2", "label": "'ProjectForge 8.2" },
+          { "type": "LABEL", "key": "el-3", "label": "'License: GPLv3" }
+        ]
+      }
+    ],
+    "translations": {
+      "cancel": "Cancel",
+      "save": "Save"
+    },
+    "userAccess": { "cancel": true }
+  }
+}

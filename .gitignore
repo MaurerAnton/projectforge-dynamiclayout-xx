@@ -1,0 +1,11 @@
+*.jar
+*.klib
+*.kexe
+build/
+.gradle/
+.kotlin/
+node_modules/
+dist/
+.idea/
+*.iml
+.DS_Store
