@@ -2,6 +2,9 @@
 
 > **Status: Early Draft** — API is unstable, breaking changes expected.
 
+[![CI](https://github.com/MaurerAnton/projectforge-dynamiclayout/actions/workflows/build.yml/badge.svg)](https://github.com/MaurerAnton/projectforge-dynamiclayout/actions)
+[![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
+
 **Server-Driven UI Engine.** Kotlin DSL → JSON → React / Native.
 
 ```
