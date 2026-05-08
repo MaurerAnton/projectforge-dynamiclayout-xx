@@ -201,4 +201,4 @@ Supported architectures:
 | [GETTING_STARTED.md](GETTING_STARTED.md) | Full tutorial from scratch |
 | [core/tests/src/Tests.kt](core/tests/src/Tests.kt) | 11 tests as a starting point |
 | [dynamiclayout-schema.json](dynamiclayout-schema.json) | JSON Schema |
-| [../projectforge-sdui-engine-docs](../projectforge-sdui-engine-docs/) | Full engine documentation |
+| projectforge-sdui-engine-docs/ | Full engine documentation (local) |
