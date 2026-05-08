@@ -1,6 +1,7 @@
-# ProjectForge DynamicLayout — Native Build
-# Делегирует build.sh. Автоопределение архитектуры (x86_64 / ARM64).
-# Использование: make [native|jvm|app|test|clean]
+# DynamicLayout Core — Native Build without Gradle
+# Requires: kotlinc-native on x86_64
+# On ARM64: use 'make gradle' instead
+# Usage: make [native|jvm|app|test|gradle|clean]
 
 .PHONY: all native jvm app test clean
 
@@ -15,7 +16,6 @@ jvm:
 app:
 	./build.sh app
 
-# Тесты: определяется путь к kotlinc-native и target динамически
 test: native
 	@mkdir -p build
 	@ARCH=$$(uname -m); \
@@ -23,10 +23,16 @@ test: native
 		x86_64|amd64) TARGET=linux_x64; DIR=linux-x86_64;; \
 		aarch64|arm64) TARGET=linux_arm64; DIR=linux-aarch64;; \
 	esac; \
-	KOTLIN_DIR=$$HOME/.kotlin-native/kotlin-native-$$DIR-2.0.21; \
+	KOTLIN_DIR=$$HOME/.kotlin-native/kotlin-native-prebuilt-$$DIR-2.0.21; \
 	PLUGIN=$$(find $$KOTLIN_DIR -name "*serial*plugin*.jar" | head -1); \
+	if [ -z "$$PLUGIN" ]; then \
+		echo "kotlinx-serialization plugin not found."; \
+		echo "Try: ./gradlew test"; \
+		exit 1; \
+	fi; \
 	echo ">>> Target: $$TARGET"; \
 	$$KOTLIN_DIR/bin/kotlinc-native \
+		-J-Xmx1g -J-Xms512m \
 		-Xplugin="$$PLUGIN" \
 		-library build/dynamiclayout \
 		-produce program \
