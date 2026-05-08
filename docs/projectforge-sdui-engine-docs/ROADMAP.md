@@ -83,10 +83,13 @@ Publish `@dynamiclayout/react` to npm registry.
 
 ---
 
-## 🟢 8. Enable linuxArm64 in CI
+## ✅ 8. Enable linuxArm64 in CI
 
-Add `linkDebugKotlinNativeLinuxArm64` to the CI native matrix.
-Requires: Kotlin 2.1+ with system LLVM support, or cross-compilation setup.
+**Status: Done.** `linuxArm64` target compiles successfully on x86_64 CI runner via cross-compilation.
+
+- Task: `./gradlew linuxArm64MainKlibrary`
+- Artifact: `dynamiclayout-linuxArm64` (175 KB .klib)
+- Works on standard `ubuntu-latest` runner
 
 ---
 
@@ -173,7 +176,7 @@ Allows server-side logic without round-trips.
 | 5 | Demo project | ✅ Done | — | Medium |
 | 6 | Engine extraction | ✅ Done | — | High |
 | 7 | Publish npm package | 🟢 Next | High | Low |
-| 8 | linuxArm64 CI | 🟢 Next | Medium | Medium |
+| 8 | linuxArm64 CI | ✅ Done | — | Medium |
 | 9 | Native Makefile | 🟢 Next | Low | Low |
 | 10 | Cache layouts | 🟡 Medium | Medium | Low |
 | 11 | Templates | 🟡 Medium | Medium | High |
