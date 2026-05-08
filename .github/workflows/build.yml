@@ -104,15 +104,15 @@ jobs:
           distribution: 'temurin'
 
       - name: Compile native library (${{ matrix.target }})
-        run: ./gradlew ${matrix.target}MainKlibrary
+        run: ./gradlew ${{ matrix.target }}MainKlibrary
 
       - name: Upload native artifact
         uses: actions/upload-artifact@v4
         with:
           name: dynamiclayout-${{ matrix.target }}
           path: |
-            core/build/classes/kotlin/${{ matrix.target }}/main/*.klib
-            core/build/bin/${{ matrix.target }}/debug/*.klib
+            core/build/classes/kotlin/${{ matrix.target }}/main/**/*.klib
+            core/build/bin/${{ matrix.target }}/debug/**/*.klib
 
   react:
     name: React
