@@ -101,15 +101,13 @@
 
 ---
 
-## 🟡 10. Cache Read-Only Layouts
+## ✅ 10. Cache Read-Only Layouts
 
-**Status: Planned.** Add Spring Cache config to enable `@Cacheable` on `AboutPageRest.kt`.
-
-| Aspect | Detail |
-|--------|--------|
-| Impact | Reduces server load for static pages |
-| Complexity | Low |
-| What's needed | `@EnableCaching` in ProjectForge config |
+**Status: Done.** Spring Cache configured for static About page:
+- `AboutPageRest.kt` — layout generation cached in `buildLayout()` method
+- `CacheConfiguration.kt` — `@EnableCaching` with `ConcurrentMapCacheManager`
+- CSRF token not cached (generated outside cached method)
+- Cache name: `dynamicLayouts`
 
 ---
 
@@ -186,7 +184,7 @@ Allows server-side to describe dynamic behavior without round-tripping to server
 | 7 | linuxArm64 CI | ✅ Done | — | Medium |
 | 8 | Makefile build | ✅ Done | — | Low |
 | 9 | Publish npm package | 🟢 Next | High | Low |
-| 10 | Cache layouts | 🟡 Medium | Medium | Low |
+| 10 | Cache layouts | ✅ Done | — | Low |
 | 11 | Templates | 🟡 Medium | Medium | High |
 | 12 | Field-level reactivity | 🟡 Medium | High | Medium |
 | 13 | kotlinx.serialisation | 🔵 Long | Medium | High |
