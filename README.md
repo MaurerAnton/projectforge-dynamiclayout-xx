@@ -225,6 +225,7 @@ const json = { /* paste any example JSON here */ };
 | File | About |
 |------|-------|
 | [GETTING_STARTED.md](GETTING_STARTED.md) | Full tutorial from scratch |
+| [playground/](playground/) | Interactive playground — paste JSON, see live preview |
 | [core/tests/src/Tests.kt](core/tests/src/Tests.kt) | 11 tests as a starting point |
 | [dynamiclayout-schema.json](dynamiclayout-schema.json) | JSON Schema |
 | [docs/](docs/) | Full engine documentation |

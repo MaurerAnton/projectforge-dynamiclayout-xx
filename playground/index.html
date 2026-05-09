@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DynamicLayout Playground</title>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<link crossorigin href="https://cdn.jsdelivr.net/npm/bootstrap@5.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+  body, html, #root { height: 100%; margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+  .playground { display: flex; height: 100vh; }
+  .pane { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .pane-header { padding: 8px 16px; background: #f8f9fa; border-bottom: 1px solid #dee2e6; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+  .pane-header select { font-size: 13px; }
+  .editor-pane { border-right: 1px solid #dee2e6; }
+  textarea { flex: 1; border: none; padding: 16px; font-family: 'SF Mono', 'Monaco', 'Menlo', monospace; font-size: 13px; resize: none; outline: none; tab-size: 2; }
+  .preview-pane { background: #fff; overflow-y: auto; }
+  .preview-content { padding: 24px; max-width: 800px; }
+  .error-bar { background: #f8d7da; color: #842029; padding: 8px 16px; font-size: 13px; font-family: monospace; border-top: 1px solid #f5c2c7; white-space: pre-wrap; }
+  .status-bar { background: #e9ecef; padding: 4px 16px; font-size: 12px; color: #6c757d; display: flex; justify-content: space-between; }
+  .preset-btn { font-size: 12px; padding: 2px 8px; cursor: pointer; }
+  .empty-state { color: #6c757d; text-align: center; padding: 60px 20px; }
+  .empty-state h5 { margin-bottom: 8px; }
+  .empty-state p { font-size: 14px; }
+  label { font-weight: 500; margin-bottom: 2px; }
+  .field-group { margin-bottom: 12px; }
+  .field-group input, .field-group textarea, .field-group select { width: 100%; padding: 6px 12px; font-size: 14px; border: 1px solid #ced4da; border-radius: 4px; box-sizing: border-box; }
+  .field-group input:focus, .field-group textarea:focus { border-color: #86b7fe; outline: 0; box-shadow: 0 0 0 0.2rem rgba(13,110,253,.25); }
+  .field-group small { color: #6c757d; display: block; margin-top: 2px; }
+  legend { font-size: 1rem; font-weight: 600; margin-bottom: 8px; }
+  fieldset { border: 1px solid #dee2e6; border-radius: 6px; padding: 16px; margin-bottom: 16px; }
+  button { padding: 6px 16px; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; margin-right: 8px; }
+  button.primary { background: #0d6efd; color: #fff; }
+  button.secondary { background: #6c757d; color: #fff; }
+  button.danger { background: #dc3545; color: #fff; }
+  button.default { background: #0d6efd; color: #fff; }
+  .inline-flex { display: inline-flex; gap: 0.5rem; align-items: center; flex-wrap: nowrap; }
+  .row-flex { display: flex; flex-wrap: wrap; margin: 0 -8px; }
+  .col-flex { flex: 1 1 0%; padding: 0 8px; min-width: 200px; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useRef, useCallback, useMemo, createContext, useContext } = React;
+
+// === DynamicLayout Components ===
+
+// DynamicLayoutContext
+const DynamicLayoutContext = createContext({
+  ui: {}, data: {}, setData: () => {}, renderLayout: () => null,
+  validationErrors: [], variables: {}, setVariables: () => {},
+});
+
+// DynamicRenderer
+function renderLayout(content) {
+  if (!content) return null;
+  return content.map(({ type, key, ...props }) => {
+    const comp = componentRegistry[type];
+    if (!comp) return React.createElement('span', { key, style: { color: 'red' } }, `Unknown: ${type}`);
+    return React.createElement(comp, { key, type, ...props });
+  });
+}
+
+const componentRegistry = {};
+
+function registerComponent(type, comp) { componentRegistry[type] = comp; }
+
+// DynamicGroup (ROW/COL/GROUP/FRAGMENT)
+function DynamicGroup({ content, type, collapseTitle }) {
+  const { renderLayout: rl } = useContext(DynamicLayoutContext);
+  const Tag = type === 'COL' ? 'div' : type === 'ROW' ? 'div' : type === 'GROUP' ? 'div' : React.Fragment;
+  const className = type === 'ROW' ? 'row-flex' : type === 'COL' ? 'col-flex' : '';
+  const style = type === 'GROUP' ? { marginBottom: '8px' } : {};
+  return React.createElement(Tag, { className, style }, rl(content));
+}
+
+// DynamicFieldset
+function DynamicFieldset({ content, title, collapsed }) {
+  const { renderLayout: rl } = useContext(DynamicLayoutContext);
+  const [open, setOpen] = useState(collapsed !== true);
+  return React.createElement('fieldset', null,
+    title && React.createElement('legend', {
+      style: { cursor: collapsed !== null && collapsed !== undefined ? 'pointer' : 'default', fontSize: '1rem', fontWeight: 600 },
+      onClick: () => collapsed !== null && collapsed !== undefined && setOpen(!open)
+    }, title),
+    open && rl(content)
+  );
+}
+
+// DynamicInlineGroup
+function DynamicInlineGroup({ content }) {
+  const { renderLayout: rl } = useContext(DynamicLayoutContext);
+  return React.createElement('div', { className: 'inline-flex', style: { gap: '0.5rem', display: 'inline-flex', alignItems: 'center' } }, rl(content));
+}
+
+// DynamicLabel
+function DynamicLabel({ label, tooltip }) {
+  return React.createElement('div', { className: 'field-group' },
+    React.createElement('label', null, label || '', tooltip ? React.createElement('small', { style: { color: '#888', cursor: 'help', marginLeft: 4 } }, 'ⓘ') : null)
+  );
+}
+
+// DynamicInput
+function DynamicInput({ id, label, required, placeholder, tooltip }) {
+  const { data, setData, validationErrors } = useContext(DynamicLayoutContext);
+  const val = data?.[id] || '';
+  const err = validationErrors?.find(e => e.fieldId === id);
+  return React.createElement('div', { className: 'field-group' },
+    label && React.createElement('label', null, label, required ? React.createElement('span', { style: { color: '#dc3545', marginLeft: 2 } }, '*') : null),
+    React.createElement('input', {
+      id, value: val, placeholder,
+      onChange: e => setData({ [id]: e.target.value }),
+      style: { borderColor: err ? '#dc3545' : undefined }
+    }),
+    tooltip && React.createElement('small', null, tooltip),
+    err && React.createElement('small', { style: { color: '#dc3545' } }, err.message)
+  );
+}
+
+// DynamicCheckbox
+function DynamicCheckbox({ id, label }) {
+  const { data, setData } = useContext(DynamicLayoutContext);
+  return React.createElement('div', { className: 'field-group', style: { display: 'flex', alignItems: 'center', gap: 6 } },
+    React.createElement('input', { type: 'checkbox', id, checked: !!data?.[id], onChange: e => setData({ [id]: e.target.checked }) }),
+    label && React.createElement('label', { htmlFor: id, style: { fontWeight: 400, margin: 0 } }, label)
+  );
+}
+
+// DynamicTextArea
+function DynamicTextArea({ id, label, rows }) {
+  const { data, setData } = useContext(DynamicLayoutContext);
+  const val = data?.[id] || '';
+  return React.createElement('div', { className: 'field-group' },
+    label && React.createElement('label', null, label),
+    React.createElement('textarea', { id, value: val, rows: rows || 3, onChange: e => setData({ [id]: e.target.value }) })
+  );
+}
+
+// DynamicSelect
+function DynamicSelect({ id, label, values, required }) {
+  const { data, setData } = useContext(DynamicLayoutContext);
+  const val = data?.[id] || '';
+  return React.createElement('div', { className: 'field-group' },
+    label && React.createElement('label', null, label, required ? React.createElement('span', { style: { color: '#dc3545', marginLeft: 2 } }, '*') : null),
+    React.createElement('select', { id, value: val, onChange: e => setData({ [id]: e.target.value }) },
+      React.createElement('option', { value: '' }, 'Select...'),
+      (values || []).map(v => React.createElement('option', { key: v.id, value: v.id }, v.displayName || v.label))
+    )
+  );
+}
+
+// DynamicButton
+function DynamicButton({ id, title, color, default: isDefault, disabled, confirmMessage }) {
+  const { callAction } = useContext(DynamicLayoutContext);
+  const handle = () => {
+    if (confirmMessage && !confirm(confirmMessage)) return;
+    callAction?.({ id });
+  };
+  const colors = { primary: '#0d6efd', secondary: '#6c757d', success: '#198754', danger: '#dc3545', warning: '#ffc107', info: '#0dcaf0' };
+  return React.createElement('button', {
+    type: isDefault ? 'submit' : 'button',
+    onClick: handle,
+    disabled,
+    style: {
+      backgroundColor: colors[color] || colors.secondary,
+      color: '#fff', border: 'none', borderRadius: 4, padding: '6px 16px',
+      cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.65 : 1,
+      fontWeight: 500, marginRight: 8
+    }
+  }, title || id);
+}
+
+// DynamicAlert
+function DynamicAlert({ message, title, color }) {
+  if (!message) return null;
+  const bg = { primary: '#cfe2ff', success: '#d1e7dd', danger: '#f8d7da', warning: '#fff3cd', info: '#cff4fc' };
+  const txt = { primary: '#084298', success: '#0f5132', danger: '#842029', warning: '#664d03', info: '#055160' };
+  return React.createElement('div', { style: { padding: 16, backgroundColor: bg[color] || bg.info, color: txt[color] || txt.info, borderRadius: 6, border: `1px solid ${bg[color] || bg.info}`, marginBottom: 16 } },
+    title && React.createElement('h5', { style: { margin: '0 0 4px 0' } }, title),
+    React.createElement('div', null, message)
+  );
+}
+
+// DynamicBadge
+function DynamicBadge({ title, color, pill }) {
+  const colors = { primary: '#0d6efd', secondary: '#6c757d', success: '#198754', danger: '#dc3545', warning: '#ffc107', info: '#0dcaf0' };
+  return React.createElement('span', { style: { display: 'inline-block', padding: '3px 8px', fontSize: 12, fontWeight: 700, backgroundColor: colors[color] || '#6c757d', color: '#fff', borderRadius: pill ? '50rem' : 4, marginRight: 4 } }, title);
+}
+
+// DynamicSpacer
+function DynamicSpacer({ width }) {
+  return React.createElement('div', { style: { width: width || 1, display: 'inline-block' } });
+}
+
+// DynamicReadonlyField
+function DynamicReadonlyField({ id, label, value }) {
+  const { data } = useContext(DynamicLayoutContext);
+  const display = value || (data?.[id]);
+  return React.createElement('div', { className: 'field-group' },
+    label && React.createElement('label', { style: { color: '#6c757d' } }, label),
+    React.createElement('div', { style: { padding: '6px 12px', backgroundColor: '#e9ecef', borderRadius: 4 } }, display || '—')
+  );
+}
+
+// DynamicProgress
+function DynamicProgress({ id, title, value, color }) {
+  const { data } = useContext(DynamicLayoutContext);
+  const pct = data?.[id]?.value ?? value ?? 0;
+  const colors = { primary: '#0d6efd', success: '#198754', danger: '#dc3545' };
+  return React.createElement('div', { className: 'field-group' },
+    title && React.createElement('label', null, title),
+    React.createElement('div', { style: { height: 20, backgroundColor: '#e9ecef', borderRadius: 4, overflow: 'hidden' } },
+      React.createElement('div', { style: { width: `${Math.min(100, Math.max(0, pct))}%`, height: '100%', backgroundColor: colors[color] || colors.primary, borderRadius: 4, transition: 'width 0.3s' } })
+    ),
+    React.createElement('small', null, `${pct}%`)
+  );
+}
+
+// DynamicList
+function DynamicList({ listId, content, elementVar, positionLabel }) {
+  const { data, renderLayout: rl } = useContext(DynamicLayoutContext);
+  const items = data?.[listId];
+  if (!items || !Array.isArray(items)) return null;
+  return React.createElement('div', null,
+    items.map((item, i) => React.createElement('div', { key: item.id || i, style: { border: '1px solid #dee2e6', borderRadius: 4, padding: 12, marginBottom: 8 } },
+      React.createElement('div', { style: { fontWeight: 600, fontSize: 13, marginBottom: 8, color: '#6c757d' } }, `${positionLabel || 'Item'} #${i + 1}`),
+      rl(content)
+    ))
+  );
+}
+
+// DynamicActionGroup
+function DynamicActionGroup({ actions }) {
+  if (!actions?.length) return null;
+  return React.createElement('div', { style: { display: 'flex', gap: 8, padding: '16px 0', borderTop: '1px solid #dee2e6', marginTop: 16 } },
+    actions.map((a, i) => React.createElement(DynamicButton, { key: a.key || i, ...a }))
+  );
+}
+
+// DynamicLayout - main component
+function DynamicLayout({ ui, data, setData, callAction, validationErrors, variables, setVariables, children }) {
+  const { layout, actions, title, layoutBelowActions } = ui || {};
+  const ctx = useMemo(() => ({ ui, data, setData, renderLayout, callAction, validationErrors, variables, setVariables }), [ui, data, setData, callAction, validationErrors, variables]);
+
+  return React.createElement(DynamicLayoutContext.Provider, { value: ctx },
+    React.createElement('div', null,
+      renderLayout(layout),
+      actions?.length > 0 && React.createElement(DynamicActionGroup, { actions }),
+      renderLayout(layoutBelowActions),
+      children
+    )
+  );
+}
+
+// Register components
+registerComponent('ROW', DynamicGroup);
+registerComponent('COL', DynamicGroup);
+registerComponent('GROUP', DynamicGroup);
+registerComponent('FRAGMENT', DynamicGroup);
+registerComponent('FIELDSET', DynamicFieldset);
+registerComponent('INLINE_GROUP', DynamicInlineGroup);
+registerComponent('LABEL', DynamicLabel);
+registerComponent('INPUT', DynamicInput);
+registerComponent('TEXTAREA', DynamicTextArea);
+registerComponent('CHECKBOX', DynamicCheckbox);
+registerComponent('SELECT', DynamicSelect);
+registerComponent('BUTTON', DynamicButton);
+registerComponent('ALERT', DynamicAlert);
+registerComponent('BADGE', DynamicBadge);
+registerComponent('BADGE_LIST', DynamicBadgeList);
+registerComponent('SPACER', DynamicSpacer);
+registerComponent('READONLY_FIELD', DynamicReadonlyField);
+registerComponent('PROGRESS', DynamicProgress);
+registerComponent('LIST', DynamicList);
+
+// DynamicBadgeList
+function DynamicBadgeList({ badgeList }) {
+  if (!badgeList?.length) return null;
+  return React.createElement('div', { style: { display: 'flex', flexWrap: 'wrap', gap: 4 } },
+    badgeList.map((b, i) => React.createElement(DynamicBadge, { key: i, ...b }))
+  );
+}
+
+// === Presets ===
+
+const PRESETS = {
+  'about-layout.json': { title: 'Static About Page', url: 'examples/about-layout.json' },
+  'feedback-form.json': { title: 'Feedback Form', url: 'examples/feedback-form.json' },
+  'registration-form.json': { title: 'Registration Form', url: 'examples/registration-form.json' },
+};
+
+const EXAMPLE_ABOUT = {
+  ui: {
+    title: 'About ProjectForge',
+    uid: 'layout1',
+    layout: [
+      { type: 'FIELDSET', key: 'e1', title: 'Info', content: [
+        { type: 'LABEL', key: 'e2', label: 'DynamicLayout Engine v0.1.0' },
+        { type: 'LABEL', key: 'e3', label: 'Server-Driven UI for Kotlin + React' },
+        { type: 'LABEL', key: 'e4', label: 'License: GPLv3' },
+      ]}
+    ],
+    translations: {},
+    userAccess: { cancel: true }
+  }
+};
+
+const EXAMPLE_FORM = {
+  ui: {
+    title: 'Example Form',
+    uid: 'layout2',
+    layout: [
+      { type: 'FIELDSET', key: 'f1', title: 'Personal Info', content: [
+        { type: 'INPUT', key: 'f2', id: 'name', label: 'Your Name', required: true },
+        { type: 'INPUT', key: 'f3', id: 'email', label: 'Email', required: true },
+        { type: 'ROW', key: 'f4', content: [
+          { type: 'COL', key: 'f5', length: { xs: 12, md: 6 }, content: [
+            { type: 'INPUT', key: 'f6', id: 'phone', label: 'Phone' },
+          ]},
+          { type: 'COL', key: 'f7', length: { xs: 12, md: 6 }, content: [
+            { type: 'INPUT', key: 'f8', id: 'age', label: 'Age', dataType: 'INT' },
+          ]}
+        ]},
+        { type: 'CHECKBOX', key: 'f9', id: 'agree', label: 'I agree to terms' },
+      ]}
+    ],
+    actions: [
+      { type: 'BUTTON', key: 'f10', id: 'save', title: 'Submit', color: 'primary', default: true },
+      { type: 'BUTTON', key: 'f11', id: 'cancel', title: 'Cancel', color: 'secondary' },
+    ],
+    translations: {},
+    userAccess: { cancel: true }
+  }
+};
+
+// === Playground App ===
+
+function Playground() {
+  const [json, setJson] = useState(JSON.stringify(EXAMPLE_ABOUT, null, 2));
+  const [data, setData] = useState({});
+  const [error, setError] = useState(null);
+  const [minimap, setMinimap] = useState(false);
+  const [selectedPreset, setSelectedPreset] = useState('about-layout.json');
+
+  const parsed = useMemo(() => {
+    try {
+      const obj = JSON.parse(json);
+      setError(null);
+      return obj;
+    } catch (e) {
+      setError(`JSON Error: ${e.message}`);
+      return null;
+    }
+  }, [json]);
+
+  const loadPreset = useCallback(async (name) => {
+    setSelectedPreset(name);
+    setData({});
+    try {
+      if (PRESETS[name]) {
+        const resp = await fetch(PRESETS[name].url);
+        if (resp.ok) {
+          const text = await resp.text();
+          setJson(text);
+          return;
+        }
+      }
+      // Fallback to built-in examples
+      const examples = { 'about-layout.json': EXAMPLE_ABOUT, 'feedback-form.json': EXAMPLE_FORM };
+      const ex = examples[name] || EXAMPLE_ABOUT;
+      setJson(JSON.stringify(ex, null, 2));
+    } catch (e) {
+      const examples = { 'about-layout.json': EXAMPLE_ABOUT, 'feedback-form.json': EXAMPLE_FORM };
+      setJson(JSON.stringify(examples[name] || EXAMPLE_ABOUT, null, 2));
+    }
+  }, []);
+
+  const chars = json.length;
+  const isValid = !error && parsed !== null;
+
+  return React.createElement('div', { className: 'playground' },
+    // Editor pane
+    React.createElement('div', { className: 'pane editor-pane' },
+      React.createElement('div', { className: 'pane-header' },
+        React.createElement('span', null, '📝 Layout JSON'),
+        React.createElement('select', { value: selectedPreset, onChange: e => loadPreset(e.target.value), style: { marginLeft: 'auto', fontSize: 13, padding: '2px 4px' } },
+          React.createElement('option', { value: 'about-layout.json' }, 'About Page'),
+          React.createElement('option', { value: 'feedback-form.json' }, 'Feedback Form'),
+          React.createElement('option', { value: 'registration-form.json' }, 'Registration Form'),
+        ),
+        React.createElement('button', { onClick: () => { setData({}); setError(null); }, className: 'preset-btn', style: { marginLeft: 8, background: '#6c757d', color: '#fff', border: 'none', borderRadius: 3, padding: '2px 8px' } }, 'Reset Data'),
+      ),
+      React.createElement('textarea', {
+        value: json,
+        onChange: e => setJson(e.target.value),
+        spellCheck: false,
+        placeholder: 'Paste your DynamicLayout JSON here...'
+      }),
+      React.createElement('div', { className: 'status-bar' },
+        React.createElement('span', null, `${chars} chars`),
+        isValid && React.createElement('span', { style: { color: '#198754' } }, 'JSON ✓'),
+        !isValid && error && React.createElement('span', { style: { color: '#dc3545' } }, 'JSON ✗'),
+      ),
+      error && React.createElement('div', { className: 'error-bar' }, error),
+    ),
+    // Preview pane
+    React.createElement('div', { className: 'pane preview-pane' },
+      React.createElement('div', { className: 'pane-header' },
+        React.createElement('span', null, '🔍 Live Preview'),
+        React.createElement('span', { style: { marginLeft: 'auto', fontSize: 12, color: '#888' } }, `components: ${parsed?.ui?.layout?.length || 0}`),
+      ),
+      React.createElement('div', { className: 'preview-content' },
+        !parsed ? React.createElement('div', { className: 'empty-state' },
+          React.createElement('h5', null, 'No valid JSON'),
+          React.createElement('p', null, 'Paste a DynamicLayout JSON or select a preset above.')
+        ) :
+        React.createElement(DynamicLayout, {
+          ui: parsed.ui,
+          data,
+          setData: (update) => setData(prev => ({ ...prev, ...update })),
+          callAction: (action) => alert(`Action triggered: ${action.id}`),
+          validationErrors: parsed.ui?.validationErrors || [],
+        })
+      ),
+    ),
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(Playground));
+</script>
+</body>
+</html>

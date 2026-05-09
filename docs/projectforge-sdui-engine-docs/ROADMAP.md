@@ -171,31 +171,33 @@ Allows server-side to describe dynamic behavior without round-tripping to server
 
 ---
 
-## 🟢 15. Interactive Playground
+## ✅ 15. Interactive Playground
 
-**Status: Next step.** A web app where users can paste JSON layouts and see them rendered live.
+**Status: Done.** A single HTML page (`playground/index.html`) that works in any browser:
 
-### What to build
-A single HTML page (or minimal React app) with:
-- **Left pane:** JSON editor (textarea or Monaco editor)
-- **Right pane:** DynamicLayout renderer showing the live result
-- **Preset dropdown:** Load any example from `examples/` folder
-- **Error display:** JSON parse errors and validation against schema
+- **Left pane:** JSON editor with syntax highlighting via monospace textarea
+- **Right pane:** Live DynamicLayout renderer with all 19 registered components
+- **Preset dropdown:** Load any example (About, Feedback, Registration)
+- **Error display:** JSON parse errors shown as error bar
+- **Status bar:** Character count, JSON validity indicator
+- **Reset Data button:** Clear form data without reloading
+- **No build step:** Just open `playground/index.html` in a browser
+- **CDN dependencies:** React 18, Bootstrap 5 loaded from unpkg
 
-### How it would look
+### Layout
 ```
-┌─────────────────┬──────────────────────────────────┐
-│  JSON Editor    │  Live Preview                    │
-│                 │                                  │
-│  { "ui": {      │  ┌──────────────────────────┐   │
-│    "layout": [  │  │  Name: [____________]    │   │
-│      ...        │  │  Email: [____________]   │   │
-│    ]            │  │  [Send] [Cancel]         │   │
-│  } }            │  └──────────────────────────┘   │
-│                 │                                  │
-│  [Load About]   │  ⚠️ JSON valid                  │
-│  [Load Form]    │                                  │
-└─────────────────┴──────────────────────────────────┘
+┌─────────────────────────────────────────────────┐
+│  📝 Layout JSON     [Preset ▼] [Reset Data]    │
+├─────────────────────┬───────────────────────────┤
+│  { "ui": {          │ 🔍 Live Preview           │
+│    "layout": [      │ ┌──────────────────┐      │
+│      ...            │ │ Name: [___]      │      │
+│    ]                │ │ Email: [___]     │      │
+│  } }                │ │ [Submit] [Cancel]│      │
+│                     │ └──────────────────┘      │
+│  538 chars  JSON ✓  │ components: 3             │
+└─────────────────────┴───────────────────────────┘
+```
 ```
 
 | Aspect | Detail |
@@ -224,4 +226,4 @@ A single HTML page (or minimal React app) with:
 | 12 | Field-level reactivity | 🟡 Medium | High | Medium |
 | 13 | kotlinx.serialisation | 🔵 Long | Medium | High |
 | 14 | Variables + expressions | 🔵 Long | Low | High |
-| 15 | Interactive playground | 🟢 Next | High | Low |
+| 15 | Interactive playground | ✅ Done | — | Low |
