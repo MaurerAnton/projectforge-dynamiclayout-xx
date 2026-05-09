@@ -760,13 +760,26 @@ function Playground() {
 
   // Handle mode switches
   const switchMode = useCallback((newMode) => {
-    console.log('switchMode:', mode, '->', newMode);
     setMode(newMode);
     if (newMode === 'js') {
-      // JS mode: eval the JsLayout code to generate JSON
-      setTimeout(() => evalJs(jsCode), 50);
+      // JS mode: eval JsLayout code IMMEDIATELY (no setTimeout)
+      try {
+        const result = (0, eval)(jsCode);
+        if (typeof result === 'string') {
+          JSON.parse(result);
+          setJson(result);
+          setOriginalJson(result);
+        } else if (result && typeof result === 'object') {
+          const text = JSON.stringify(result, null, 2);
+          setJson(text);
+          setOriginalJson(text);
+        }
+        setJsError(null);
+      } catch (e) {
+        setJsError(e.message);
+      }
     } else {
-      // Non-JS modes: reload preset JSON for consistency
+      // Non-JS modes: reload preset JSON
       const examples = {
         'about-layout.json': EXAMPLE_ABOUT,
         'feedback-form.json': EXAMPLE_FORM,
@@ -778,7 +791,7 @@ function Playground() {
       setOriginalJson(text);
       setData({});
     }
-  }, [jsCode, evalJs, mode, selectedPreset]);
+  }, [jsCode, selectedPreset]);
 
   // Debounced JS eval on code edits (only in JS mode)
   useEffect(() => {
