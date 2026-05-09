@@ -704,21 +704,26 @@ function Playground() {
     setData({});
     const jsExample = JS_SOURCES[name] || JS_ABOUT;
     setJsCode(jsExample);
+    // Helper to set json and originalJson consistently
+    const setPresetJson = (text) => {
+      setJson(text);
+      setOriginalJson(text);
+    };
     try {
       if (PRESETS[name]) {
         const resp = await fetch(PRESETS[name].url);
         if (resp.ok) {
           const text = await resp.text();
-          setJson(text);
+          setPresetJson(text);
           return;
         }
       }
       const examples = { 'about-layout.json': EXAMPLE_ABOUT, 'feedback-form.json': EXAMPLE_FORM, 'registration-form.json': EXAMPLE_REGISTRATION };
       const ex = examples[name] || EXAMPLE_ABOUT;
-      setJson(JSON.stringify(ex, null, 2));
+      setPresetJson(JSON.stringify(ex, null, 2));
     } catch (e) {
       const examples = { 'about-layout.json': EXAMPLE_ABOUT, 'feedback-form.json': EXAMPLE_FORM, 'registration-form.json': EXAMPLE_REGISTRATION };
-      setJson(JSON.stringify(examples[name] || EXAMPLE_ABOUT, null, 2));
+      setPresetJson(JSON.stringify(examples[name] || EXAMPLE_ABOUT, null, 2));
     }
   }, []);
 
@@ -729,6 +734,8 @@ function Playground() {
 
   const [jsCode, setJsCode] = useState(JS_ABOUT);
   const [jsError, setJsError] = useState(null);
+  const [originalJson, setOriginalJson] = useState(JSON.stringify(EXAMPLE_ABOUT, null, 2));
+  const isModified = json !== originalJson;
 
   // Eval JS code synchronously and update json
   const evalJs = useCallback((code) => {
@@ -764,7 +771,9 @@ function Playground() {
         'registration-form.json': EXAMPLE_REGISTRATION,
       };
       const ex = examples[selectedPreset] || EXAMPLE_ABOUT;
-      setJson(JSON.stringify(ex, null, 2));
+      const text = JSON.stringify(ex, null, 2);
+      setJson(text);
+      setOriginalJson(text);
       setData({});
     }
   }, [jsCode, evalJs, mode, selectedPreset]);
@@ -806,7 +815,14 @@ function Playground() {
           React.createElement('option', { value: 'feedback-form.json' }, 'Feedback Form'),
           React.createElement('option', { value: 'registration-form.json' }, 'Registration Form'),
         ),
-        React.createElement('button', { onClick: () => loadPreset(selectedPreset), className: 'preset-btn', style: { marginLeft: 8, background: '#6c757d', color: '#fff', border: 'none', borderRadius: 3, padding: '2px 8px' } }, 'Reset Data'),
+        React.createElement('span', {
+          style: {
+            marginLeft: 12, fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 3,
+            color: isModified ? '#dc3545' : '#198754',
+            backgroundColor: isModified ? '#f8d7da' : '#d1e7dd',
+          }
+        }, isModified ? '✱ MODIFIED' : '● ORIGINAL'),
+        React.createElement('button', { onClick: () => loadPreset(selectedPreset), className: 'preset-btn', style: { marginLeft: 4, background: '#6c757d', color: '#fff', border: 'none', borderRadius: 3, padding: '2px 8px' } }, 'Reset Data'),
       ),
       React.createElement('textarea', {
         value: editorValue,
