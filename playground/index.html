@@ -737,17 +737,19 @@ function Playground() {
   const [originalJson, setOriginalJson] = useState(JSON.stringify(EXAMPLE_ABOUT, null, 2));
   const isModified = json !== originalJson;
 
-  // Eval JS code synchronously and update json
+  // Eval JS code and update json
   const evalJs = useCallback((code) => {
     try {
-      // Use indirect eval to access global scope (window.JsLayout)
       const result = (0, eval)(code);
       if (typeof result === 'string') {
-        JSON.parse(result); // validate
+        JSON.parse(result);
         setJson(result);
+        setOriginalJson(result);
         setJsError(null);
       } else if (result && typeof result === 'object') {
-        setJson(JSON.stringify(result, null, 2));
+        const text = JSON.stringify(result, null, 2);
+        setJson(text);
+        setOriginalJson(text);
         setJsError(null);
       }
     } catch (e) {
