@@ -171,6 +171,41 @@ Allows server-side to describe dynamic behavior without round-tripping to server
 
 ---
 
+## 🟢 15. Interactive Playground
+
+**Status: Next step.** A web app where users can paste JSON layouts and see them rendered live.
+
+### What to build
+A single HTML page (or minimal React app) with:
+- **Left pane:** JSON editor (textarea or Monaco editor)
+- **Right pane:** DynamicLayout renderer showing the live result
+- **Preset dropdown:** Load any example from `examples/` folder
+- **Error display:** JSON parse errors and validation against schema
+
+### How it would look
+```
+┌─────────────────┬──────────────────────────────────┐
+│  JSON Editor    │  Live Preview                    │
+│                 │                                  │
+│  { "ui": {      │  ┌──────────────────────────┐   │
+│    "layout": [  │  │  Name: [____________]    │   │
+│      ...        │  │  Email: [____________]   │   │
+│    ]            │  │  [Send] [Cancel]         │   │
+│  } }            │  └──────────────────────────┘   │
+│                 │                                  │
+│  [Load About]   │  ⚠️ JSON valid                  │
+│  [Load Form]    │                                  │
+└─────────────────┴──────────────────────────────────┘
+```
+
+| Aspect | Detail |
+|--------|--------|
+| Impact | Interactive testing, onboarding |
+| Complexity | Low |
+| What's needed | React + DynamicLayout import |
+
+---
+
 ## Complete Summary
 
 | # | Task | Status | Priority | Complexity |
@@ -189,3 +224,4 @@ Allows server-side to describe dynamic behavior without round-tripping to server
 | 12 | Field-level reactivity | 🟡 Medium | High | Medium |
 | 13 | kotlinx.serialisation | 🔵 Long | Medium | High |
 | 14 | Variables + expressions | 🔵 Long | Low | High |
+| 15 | Interactive playground | 🟢 Next | High | Low |

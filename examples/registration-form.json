@@ -1,0 +1,70 @@
+{
+  "ui": {
+    "title": "Registration",
+    "uid": "layout1712345678903",
+    "layout": [
+      {
+        "type": "ROW",
+        "key": "el-1",
+        "content": [
+          {
+            "type": "COL",
+            "key": "el-2",
+            "length": { "xs": 12, "md": 6 },
+            "content": [
+              {
+                "type": "FIELDSET",
+                "key": "el-3",
+                "title": "Personal Info",
+                "content": [
+                  { "type": "INPUT", "key": "el-4", "id": "firstName", "label": "First Name", "required": true },
+                  { "type": "INPUT", "key": "el-5", "id": "lastName", "label": "Last Name", "required": true },
+                  { "type": "INPUT", "key": "el-6", "id": "email", "label": "Email", "required": true }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "COL",
+            "key": "el-7",
+            "length": { "xs": 12, "md": 6 },
+            "content": [
+              {
+                "type": "FIELDSET",
+                "key": "el-8",
+                "title": "Details",
+                "content": [
+                  { "type": "INPUT", "key": "el-9", "id": "phone", "label": "Phone" },
+                  { "type": "SELECT", "key": "el-10", "id": "country", "label": "Country",
+                    "values": [
+                      { "id": "us", "displayName": "United States" },
+                      { "id": "de", "displayName": "Germany" },
+                      { "id": "jp", "displayName": "Japan" }
+                    ]
+                  },
+                  { "type": "CHECKBOX", "key": "el-11", "id": "agree", "label": "I agree to the terms" }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "FIELDSET",
+        "key": "el-12",
+        "title": "Additional Info",
+        "collapsed": true,
+        "content": [
+          { "type": "TEXTAREA", "key": "el-13", "id": "notes", "label": "Notes", "rows": 3 },
+          { "type": "INPUT", "key": "el-14", "id": "startDate", "label": "Start Date", "dataType": "DATE" }
+        ]
+      }
+    ],
+    "actions": [
+      { "type": "BUTTON", "key": "el-15", "id": "register", "title": "Register", "color": "primary", "default": true },
+      { "type": "BUTTON", "key": "el-16", "id": "cancel", "title": "Cancel", "color": "secondary" }
+    ],
+    "translations": { "cancel": "Cancel", "save": "Save" },
+    "userAccess": { "cancel": true }
+  }
+}

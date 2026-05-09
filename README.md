@@ -185,6 +185,29 @@ Supported architectures:
 
 ---
 
+## Examples
+
+Example JSON layouts that demonstrate what DynamicLayout can render:
+
+| File | Description | Components used |
+|------|-------------|-----------------|
+| [examples/about-layout.json](examples/about-layout.json) | Static info page | FIELDSET, LABEL |
+| [examples/feedback-form.json](examples/feedback-form.json) | Contact form with two-column layout | ROW, COL, INPUT, TEXTAREA, BUTTON |
+| [examples/registration-form.json](examples/registration-form.json) | Complex form with select, checkbox, collapsible fieldset | ROW, COL, FIELDSET, INPUT, SELECT, CHECKBOX, TEXTAREA, BUTTON |
+
+To preview any example:
+1. Copy the JSON into a DynamicLayout React component
+2. Or serve it via the demo server (`dynamiclayout-demo/`)
+
+```jsx
+import { DynamicLayout } from '@dynamiclayout/react';
+
+const json = { /* paste any example JSON here */ };
+<DynamicLayout ui={json.ui} data={{}} />;
+```
+
+---
+
 ## Gradle comparison
 
 | Aspect | Gradle | Makefile + build.sh |

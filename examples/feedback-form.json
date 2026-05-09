@@ -1,0 +1,45 @@
+{
+  "ui": {
+    "title": "Feedback Form",
+    "uid": "layout1712345678902",
+    "layout": [
+      {
+        "type": "FIELDSET",
+        "key": "el-1",
+        "title": "Your Details",
+        "content": [
+          {
+            "type": "ROW",
+            "key": "el-2",
+            "content": [
+              {
+                "type": "COL",
+                "key": "el-3",
+                "length": { "xs": 12, "md": 6 },
+                "content": [
+                  { "type": "INPUT", "key": "el-4", "id": "name", "label": "Name", "required": true, "dataType": "STRING" }
+                ]
+              },
+              {
+                "type": "COL",
+                "key": "el-5",
+                "length": { "xs": 12, "md": 6 },
+                "content": [
+                  { "type": "INPUT", "key": "el-6", "id": "email", "label": "Email", "required": true, "dataType": "STRING" }
+                ]
+              }
+            ]
+          },
+          { "type": "INPUT", "key": "el-7", "id": "subject", "label": "Subject", "required": true, "dataType": "STRING" },
+          { "type": "TEXTAREA", "key": "el-8", "id": "message", "label": "Message", "required": true, "rows": 5 }
+        ]
+      }
+    ],
+    "actions": [
+      { "type": "BUTTON", "key": "el-9", "id": "send", "title": "Send Feedback", "color": "primary", "default": true },
+      { "type": "BUTTON", "key": "el-10", "id": "cancel", "title": "Cancel", "color": "secondary" }
+    ],
+    "translations": { "cancel": "Cancel", "save": "Save" },
+    "userAccess": { "cancel": true }
+  }
+}
