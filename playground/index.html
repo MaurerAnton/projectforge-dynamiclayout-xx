@@ -279,7 +279,9 @@ registerComponent('LIST', DynamicList);
 // === DynamicLayout JS DSL — real-time executable from playground ===
 // Mirrors the Kotlin API: UILayout, UIRow, UIInput, etc.
 // Returns a plain object that DynamicRenderer can consume.
-class JsLayout {
+
+// Expose globally so eval() inside Playground can find it
+window.JsLayout = class JsLayout {
   constructor(title) {
     this.title = title;
     this.layout = [];
@@ -731,9 +733,10 @@ function Playground() {
   // Eval JS code synchronously and update json
   const evalJs = useCallback((code) => {
     try {
-      const result = eval(code);
+      // Use indirect eval to access global scope (window.JsLayout)
+      const result = (0, eval)(code);
       if (typeof result === 'string') {
-        JSON.parse(result);
+        JSON.parse(result); // validate
         setJson(result);
         setJsError(null);
       } else if (result && typeof result === 'object') {
@@ -741,6 +744,7 @@ function Playground() {
         setJsError(null);
       }
     } catch (e) {
+      console.error('evalJs error:', e);
       setJsError(e.message);
     }
   }, []);
