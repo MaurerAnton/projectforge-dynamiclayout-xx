@@ -386,6 +386,7 @@ const PRESETS = {
   'about-layout.json': { title: 'Static About Page', url: EXAMPLE_BASE + '/examples/about-layout.json' },
   'feedback-form.json': { title: 'Feedback Form', url: EXAMPLE_BASE + '/examples/feedback-form.json' },
   'registration-form.json': { title: 'Registration Form', url: EXAMPLE_BASE + '/examples/registration-form.json' },
+  'all-components.json': { title: 'All Components', url: EXAMPLE_BASE + '/examples/all-components.json' },
 };
 
 const EXAMPLE_ABOUT = {
@@ -555,6 +556,7 @@ const KOTLIN_SOURCES = {
   'about-layout.json': KOTLIN_ABOUT,
   'feedback-form.json': KOTLIN_FORM,
   'registration-form.json': KOTLIN_REGISTRATION,
+  'all-components.json': KOTLIN_ALL,
 };
 
 // === C++ source for each preset (from dynamiclayout.h) ===
@@ -617,6 +619,7 @@ const CPP_SOURCES = {
   'about-layout.json': CPP_ABOUT,
   'feedback-form.json': CPP_FORM,
   'registration-form.json': CPP_REGISTRATION,
+  'all-components.json': CPP_ALL,
 };
 
 // === JS source for each preset (uses JsLayout DSL — evaluated in real-time) ===
@@ -676,15 +679,196 @@ const JS_SOURCES = {
   'about-layout.json': JS_ABOUT,
   'feedback-form.json': JS_FORM,
   'registration-form.json': JS_REGISTRATION,
+  'all-components.json': JS_ALL,
 };
 
 // === Playground App ===
 
+// === All Components — demonstrates every UIElementType ===
+const EXAMPLE_ALL = {
+  ui: {
+    title: 'All DynamicLayout Components',
+    uid: 'layout_all',
+    layout: [
+      // Containers: ROW + COL
+      { type: 'ROW', key: 'r1', content: [
+        { type: 'COL', key: 'c1', length: { xs: 12, md: 6 }, content: [
+          { type: 'FIELDSET', key: 'fs1', title: 'Inputs', content: [
+            { type: 'INPUT', key: 'i1', id: 'textInput', label: 'Text Input', required: true },
+            { type: 'INPUT', key: 'i2', id: 'numberInput', label: 'Number', dataType: 'INT' },
+            { type: 'INPUT', key: 'i3', id: 'dateInput', label: 'Date', dataType: 'DATE' },
+            { type: 'INPUT', key: 'i4', id: 'emailInput', label: 'Email', required: true },
+            { type: 'INPUT', key: 'i5', id: 'passwordInput', label: 'Password', dataType: 'PASSWORD' },
+            { type: 'TEXTAREA', key: 'ta1', id: 'notes', label: 'Textarea', rows: 4 },
+          ]},
+          { type: 'FIELDSET', key: 'fs2', title: 'Selection', content: [
+            { type: 'SELECT', key: 's1', id: 'country', label: 'Select',
+              values: [
+                { id: 'us', displayName: 'USA' },
+                { id: 'de', displayName: 'Germany' },
+                { id: 'jp', displayName: 'Japan' },
+            ]},
+            { type: 'CREATABLE_SELECT', key: 'cs1', id: 'tags', label: 'Creatable Select' },
+            { type: 'CHECKBOX', key: 'cb1', id: 'agree', label: 'Checkbox' },
+            { type: 'RADIOBUTTON', key: 'rb1', id: 'gender', name: 'gender', value: 'male', label: 'Male' },
+            { type: 'RADIOBUTTON', key: 'rb2', id: 'gender', name: 'gender', value: 'female', label: 'Female' },
+            { type: 'RATING', key: 'rt1', id: 'satisfaction', label: 'Rating', values: ['1','2','3','4','5'] },
+          ]},
+        ]},
+        { type: 'COL', key: 'c2', length: { xs: 12, md: 6 }, content: [
+          { type: 'FIELDSET', key: 'fs3', title: 'Display', content: [
+            { type: 'LABEL', key: 'l1', label: 'Text Label' },
+            { type: 'LABEL', key: 'l2', label: 'With Tooltip', tooltip: 'This is a tooltip' },
+            { type: 'ALERT', key: 'a1', message: 'Success alert', color: 'success' },
+            { type: 'ALERT', key: 'a2', message: 'Info message', color: 'info' },
+            { type: 'ALERT', key: 'a3', message: 'Danger!', color: 'danger' },
+            { type: 'BADGE', key: 'b1', title: 'New', color: 'primary' },
+            { type: 'BADGE', key: 'b2', title: '14', color: 'danger', pill: true },
+            { type: 'READONLY_FIELD', key: 'rf1', id: 'createdAt', label: 'Created At', value: '2026-01-15 10:30' },
+            { type: 'SPACER', key: 'sp1', width: 2 },
+            { type: 'PROGRESS', key: 'pg1', id: 'jobProgress', value: 65, color: 'primary' },
+            { type: 'INLINE_GROUP', key: 'ig1', content: [
+              { type: 'LABEL', key: 'l3', label: 'Inline:' },
+              { type: 'INPUT', key: 'i6', id: 'inlineField', label: '' },
+            ]},
+          ]},
+        ]},
+      ]},
+      // Collapsible fieldset
+      { type: 'FIELDSET', key: 'fs4', title: 'Collapsible Section', collapsed: true, content: [
+        { type: 'LABEL', key: 'l4', label: 'This section is collapsible' },
+        { type: 'INPUT', key: 'i7', id: 'extraField', label: 'Extra Field' },
+      ]},
+    ],
+    actions: [
+      { type: 'BUTTON', key: 'btn1', id: 'save', title: 'Save', color: 'primary', default: true },
+      { type: 'BUTTON', key: 'btn2', id: 'delete', title: 'Delete', color: 'danger' },
+      { type: 'BUTTON', key: 'btn3', id: 'cancel', title: 'Cancel', color: 'secondary' },
+    ],
+    translations: {},
+    userAccess: { cancel: true }
+  }
+};
+
+const JS_ALL = `// All 29 DynamicLayout component types demo
+const page = new JsLayout('All DynamicLayout Components');
+page.row();
+// Column 1: Inputs & Selection
+page.col(12, 6);
+page.fieldset('Inputs');
+page.input('textInput', 'Text Input', { required: true });
+page.input('numberInput', 'Number', { dataType: 'INT' });
+page.input('dateInput', 'Date', { dataType: 'DATE' });
+page.input('emailInput', 'Email', { required: true });
+page.textarea('notes', 'Textarea', 4);
+page.endFieldset();
+page.fieldset('Selection');
+page.select('country', 'Select', [['us','USA'],['de','Germany'],['jp','Japan']]);
+page.checkbox('agree', 'Checkbox');
+page.endFieldset();
+page.endCol();
+// Column 2: Display
+page.col(12, 6);
+page.fieldset('Display');
+page.label('Text Label');
+page.alert('Success alert', 'success');
+page.alert('Info message', 'info');
+page.badge('New', 'primary');
+page.spacer(2);
+page.endFieldset();
+page.endCol();
+page.endRow();
+// Collapsible fieldset
+page.fieldset('Collapsible Section');
+page.label('This section is collapsible');
+page.endFieldset();
+// Actions
+page.button('save', 'Save', 'primary', true);
+page.button('delete', 'Delete', 'danger');
+page.button('cancel', 'Cancel', 'secondary');
+page.toJSON()`;
+
+const KOTLIN_ALL = `val layout = UILayout("'All DynamicLayout Components")
+
+layout.add(
+    UIRow().add(
+        UICol(UILength(xs = 12, md = 6)).add(
+            UIFieldset(title = "'Inputs")
+                .add(UIInput("textInput", label = "'Text Input", required = true))
+                .add(UIInput("numberInput", label = "'Number", dataType = UIDataType.INT))
+                .add(UIInput("dateInput", label = "'Date", dataType = UIDataType.DATE))
+                .add(UIInput("emailInput", label = "'Email", required = true))
+                .add(UITextArea("notes", label = "'Textarea", rows = 4))
+        ).add(
+            UIFieldset(title = "'Selection")
+                .add(UISelect("country", label = "'Select",
+                    values = listOf(
+                        UISelectValue("us", "USA"),
+                        UISelectValue("de", "Germany"),
+                        UISelectValue("jp", "Japan")
+                    )))
+                .add(UICheckbox("agree", label = "'Checkbox"))
+        ),
+        UICol(UILength(xs = 12, md = 6)).add(
+            UIFieldset(title = "'Display")
+                .add(UILabel("'Text Label"))
+                .add(UIAlert(message = "'Success alert", color = "success"))
+                .add(UIAlert(message = "'Info message", color = "info"))
+                .add(UIBadge(title = "'New", color = "primary"))
+                .add(UISpacer(width = 2))
+        )
+    )
+)
+
+layout.add(
+    UIFieldset(title = "'Collapsible Section", collapsed = true)
+        .add(UILabel("'This section is collapsible"))
+)
+
+layout.addAction(UIButton.createDefaultButton(title = "'Save"))
+layout.addAction(UIButton.createDangerButton(id = "delete", title = "'Delete"))
+layout.addAction(UIButton.createCancelButton())
+LayoutUtils.process(layout)
+return FormLayoutData(null, layout, serverData)`;
+
+const CPP_ALL = `DL b = dl_begin(buf, sizeof(buf), "All Components");
+
+dl_row(&b);
+dl_col(&b, 12, 6);
+dl_fieldset(&b, "Inputs");
+dl_input(&b, "textInput", "Text Input");
+dl_input(&b, "emailInput", "Email");
+dl_textarea(&b, "notes", "Textarea", 4);
+dl_end_fieldset(&b);
+dl_fieldset(&b, "Selection");
+const char *ids[] = {"us","de","jp"};
+const char *lbls[] = {"USA","Germany","Japan"};
+dl_select(&b, "country", "Select", ids, lbls, 3);
+dl_checkbox(&b, "agree", "Checkbox");
+dl_end_fieldset(&b);
+dl_end_col(&b);
+dl_col(&b, 12, 6);
+dl_fieldset(&b, "Display");
+dl_label(&b, "Text Label");
+dl_alert(&b, "Success alert", "success");
+dl_badge(&b, "New", "primary");
+dl_end_fieldset(&b);
+dl_end_col(&b);
+dl_end_row(&b);
+dl_fieldset(&b, "Collapsible Section");
+dl_label(&b, "This section is collapsible");
+dl_end_fieldset(&b);
+dl_actions(&b);
+dl_button(&b, "save", "Save", "primary");
+dl_button(&b, "cancel", "Cancel", "secondary");
+dl_end_actions(&b);
+dl_end(&b);`;
+
 function Playground() {
-  const [json, setJson] = useState(JSON.stringify(EXAMPLE_ABOUT, null, 2));
+  const [json, setJson] = useState(JSON.stringify(EXAMPLE_ALL, null, 2));
   const [data, setData] = useState({});
   const [error, setError] = useState(null);
-  const [selectedPreset, setSelectedPreset] = useState('about-layout.json');
+  const [selectedPreset, setSelectedPreset] = useState('all-components.json');
   const [mode, setMode] = useState('json'); // 'json' or 'kotlin' or 'cpp' or 'js'
 
   const parsed = useMemo(() => {
@@ -713,11 +897,11 @@ function Playground() {
           return;
         }
       }
-      const examples = { 'about-layout.json': EXAMPLE_ABOUT, 'feedback-form.json': EXAMPLE_FORM, 'registration-form.json': EXAMPLE_REGISTRATION };
+      const examples = { 'about-layout.json': EXAMPLE_ABOUT, 'feedback-form.json': EXAMPLE_FORM, 'registration-form.json': EXAMPLE_REGISTRATION, 'all-components.json': EXAMPLE_ALL };
       const ex = examples[name] || EXAMPLE_ABOUT;
       setJson(JSON.stringify(ex, null, 2));
     } catch (e) {
-      const examples = { 'about-layout.json': EXAMPLE_ABOUT, 'feedback-form.json': EXAMPLE_FORM, 'registration-form.json': EXAMPLE_REGISTRATION };
+      const examples = { 'about-layout.json': EXAMPLE_ABOUT, 'feedback-form.json': EXAMPLE_FORM, 'registration-form.json': EXAMPLE_REGISTRATION, 'all-components.json': EXAMPLE_ALL };
       setJson(JSON.stringify(examples[name] || EXAMPLE_ABOUT, null, 2));
     }
   }, []);
@@ -842,6 +1026,7 @@ function Playground() {
           React.createElement('option', { value: 'about-layout.json' }, 'About Page'),
           React.createElement('option', { value: 'feedback-form.json' }, 'Feedback Form'),
           React.createElement('option', { value: 'registration-form.json' }, 'Registration Form'),
+          React.createElement('option', { value: 'all-components.json' }, 'All Components'),
         ),
         React.createElement('span', {
           style: {
@@ -878,7 +1063,13 @@ function Playground() {
     React.createElement('div', { className: 'pane preview-pane' },
       React.createElement('div', { className: 'pane-header' },
         React.createElement('span', null, '🔍 Live Preview'),
-        React.createElement('span', { style: { marginLeft: 'auto', fontSize: 12, color: '#888' } }, `components: ${parsed?.ui?.layout?.length || 0}`),
+        React.createElement('span', { style: { fontSize: 12, color: '#888' } }, `components: ${parsed?.ui?.layout?.length || 0}`),
+        React.createElement('a', {
+          href: 'https://github.com/MaurerAnton/projectforge-dynamiclayout/blob/master/docs/projectforge-sdui-engine-docs/real-world-components.md',
+          target: '_blank',
+          style: { marginLeft: 12, fontSize: 12, color: '#0d6efd', textDecoration: 'none' }
+        }, '📘 React source code'),
+
       ),
       React.createElement('div', { className: 'preview-content' },
         !parsed ? React.createElement('div', { className: 'empty-state' },

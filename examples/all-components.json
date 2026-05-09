@@ -1,0 +1,90 @@
+{
+  "ui": {
+    "title": "All DynamicLayout Components",
+    "uid": "layout_all",
+    "layout": [
+      {
+        "type": "ROW",
+        "key": "r1",
+        "content": [
+          {
+            "type": "COL",
+            "key": "c1",
+            "length": { "xs": 12, "md": 6 },
+            "content": [
+              {
+                "type": "FIELDSET",
+                "key": "fs1",
+                "title": "Inputs",
+                "content": [
+                  { "type": "INPUT", "key": "i1", "id": "textInput", "label": "Text Input", "required": true },
+                  { "type": "INPUT", "key": "i2", "id": "numberInput", "label": "Number", "dataType": "INT" },
+                  { "type": "INPUT", "key": "i3", "id": "dateInput", "label": "Date", "dataType": "DATE" },
+                  { "type": "INPUT", "key": "i4", "id": "emailInput", "label": "Email", "required": true },
+                  { "type": "TEXTAREA", "key": "ta1", "id": "notes", "label": "Textarea", "rows": 4 }
+                ]
+              },
+              {
+                "type": "FIELDSET",
+                "key": "fs2",
+                "title": "Selection",
+                "content": [
+                  {
+                    "type": "SELECT",
+                    "key": "s1",
+                    "id": "country",
+                    "label": "Select",
+                    "values": [
+                      { "id": "us", "displayName": "USA" },
+                      { "id": "de", "displayName": "Germany" },
+                      { "id": "jp", "displayName": "Japan" }
+                    ]
+                  },
+                  { "type": "CHECKBOX", "key": "cb1", "id": "agree", "label": "Checkbox" },
+                  { "type": "RADIOBUTTON", "key": "rb1", "id": "gender", "name": "gender", "value": "male", "label": "Male" },
+                  { "type": "RATING", "key": "rt1", "id": "satisfaction", "label": "Rating", "values": ["1","2","3","4","5"] }
+                ]
+              }
+            ]
+          },
+          {
+            "type": "COL",
+            "key": "c2",
+            "length": { "xs": 12, "md": 6 },
+            "content": [
+              {
+                "type": "FIELDSET",
+                "key": "fs3",
+                "title": "Display",
+                "content": [
+                  { "type": "LABEL", "key": "l1", "label": "Text Label" },
+                  { "type": "ALERT", "key": "a1", "message": "Success alert", "color": "success" },
+                  { "type": "ALERT", "key": "a2", "message": "Info message", "color": "info" },
+                  { "type": "BADGE", "key": "b1", "title": "New", "color": "primary" },
+                  { "type": "READONLY_FIELD", "key": "rf1", "id": "createdAt", "label": "Created", "value": "2026-01-15" },
+                  { "type": "SPACER", "key": "sp1", "width": 2 },
+                  { "type": "PROGRESS", "key": "pg1", "id": "jobProgress", "value": 65, "color": "primary" }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "FIELDSET",
+        "key": "fs4",
+        "title": "Collapsible Section",
+        "collapsed": true,
+        "content": [
+          { "type": "LABEL", "key": "l4", "label": "This section is collapsible" }
+        ]
+      }
+    ],
+    "actions": [
+      { "type": "BUTTON", "key": "btn1", "id": "save", "title": "Save", "color": "primary", "default": true },
+      { "type": "BUTTON", "key": "btn2", "id": "cancel", "title": "Cancel", "color": "secondary" }
+    ],
+    "translations": {},
+    "userAccess": { "cancel": true }
+  }
+}
