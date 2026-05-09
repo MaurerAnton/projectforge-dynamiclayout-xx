@@ -559,6 +559,49 @@ layout.addAction(UIButton.createCancelButton())
 LayoutUtils.process(layout)
 return FormLayoutData(null, layout, serverData)`;
 
+
+const KOTLIN_ALL = `val layout = UILayout("'All DynamicLayout Components")
+
+layout.add(
+    UIRow().add(
+        UICol(UILength(xs = 12, md = 6)).add(
+            UIFieldset(title = "'Inputs")
+                .add(UIInput("textInput", label = "'Text Input", required = true))
+                .add(UIInput("numberInput", label = "'Number", dataType = UIDataType.INT))
+                .add(UIInput("dateInput", label = "'Date", dataType = UIDataType.DATE))
+                .add(UIInput("emailInput", label = "'Email", required = true))
+                .add(UITextArea("notes", label = "'Textarea", rows = 4))
+        ).add(
+            UIFieldset(title = "'Selection")
+                .add(UISelect("country", label = "'Select",
+                    values = listOf(
+                        UISelectValue("us", "USA"),
+                        UISelectValue("de", "Germany"),
+                        UISelectValue("jp", "Japan")
+                    )))
+                .add(UICheckbox("agree", label = "'Checkbox"))
+        ),
+        UICol(UILength(xs = 12, md = 6)).add(
+            UIFieldset(title = "'Display")
+                .add(UILabel("'Text Label"))
+                .add(UIAlert(message = "'Success alert", color = "success"))
+                .add(UIAlert(message = "'Info message", color = "info"))
+                .add(UIBadge(title = "'New", color = "primary"))
+                .add(UISpacer(width = 2))
+        )
+    )
+)
+
+layout.add(
+    UIFieldset(title = "'Collapsible Section", collapsed = true)
+        .add(UILabel("'This section is collapsible"))
+)
+
+layout.addAction(UIButton.createDefaultButton(title = "'Save"))
+layout.addAction(UIButton.createDangerButton(id = "delete", title = "'Delete"))
+layout.addAction(UIButton.createCancelButton())
+LayoutUtils.process(layout)
+return FormLayoutData(null, layout, serverData)`;
 const KOTLIN_SOURCES = {
   'about-layout.json': KOTLIN_ABOUT,
   'feedback-form.json': KOTLIN_FORM,
@@ -622,6 +665,39 @@ dl_end_actions(&b);
 
 dl_end(&b);`;
 
+
+const CPP_ALL = `DL b = dl_begin(buf, sizeof(buf), "All Components");
+
+dl_row(&b);
+dl_col(&b, 12, 6);
+dl_fieldset(&b, "Inputs");
+dl_input(&b, "textInput", "Text Input");
+dl_input(&b, "emailInput", "Email");
+dl_textarea(&b, "notes", "Textarea", 4);
+dl_end_fieldset(&b);
+dl_fieldset(&b, "Selection");
+const char *ids[] = {"us","de","jp"};
+const char *lbls[] = {"USA","Germany","Japan"};
+dl_select(&b, "country", "Select", ids, lbls, 3);
+dl_checkbox(&b, "agree", "Checkbox");
+dl_end_fieldset(&b);
+dl_end_col(&b);
+dl_col(&b, 12, 6);
+dl_fieldset(&b, "Display");
+dl_label(&b, "Text Label");
+dl_alert(&b, "Success alert", "success");
+dl_badge(&b, "New", "primary");
+dl_end_fieldset(&b);
+dl_end_col(&b);
+dl_end_row(&b);
+dl_fieldset(&b, "Collapsible Section");
+dl_label(&b, "This section is collapsible");
+dl_end_fieldset(&b);
+dl_actions(&b);
+dl_button(&b, "save", "Save", "primary");
+dl_button(&b, "cancel", "Cancel", "secondary");
+dl_end_actions(&b);
+dl_end(&b);`;
 const CPP_SOURCES = {
   'about-layout.json': CPP_ABOUT,
   'feedback-form.json': CPP_FORM,
@@ -682,6 +758,44 @@ page.button('register', 'Register', 'primary', true);
 page.button('cancel', 'Cancel', 'secondary');
 page.toJSON()`;
 
+
+const JS_ALL = `// All 29 DynamicLayout component types demo
+const page = new JsLayout('All DynamicLayout Components');
+page.row();
+// Column 1: Inputs & Selection
+page.col(12, 6);
+page.fieldset('Inputs');
+page.input('textInput', 'Text Input', { required: true });
+page.input('numberInput', 'Number', { dataType: 'INT' });
+page.input('dateInput', 'Date', { dataType: 'DATE' });
+page.input('emailInput', 'Email', { required: true });
+page.textarea('notes', 'Textarea', 4);
+page.endFieldset();
+page.fieldset('Selection');
+page.select('country', 'Select', [['us','USA'],['de','Germany'],['jp','Japan']]);
+page.checkbox('agree', 'Checkbox');
+page.endFieldset();
+page.endCol();
+// Column 2: Display
+page.col(12, 6);
+page.fieldset('Display');
+page.label('Text Label');
+page.alert('Success alert', 'success');
+page.alert('Info message', 'info');
+page.badge('New', 'primary');
+page.spacer(2);
+page.endFieldset();
+page.endCol();
+page.endRow();
+// Collapsible fieldset
+page.fieldset('Collapsible Section');
+page.label('This section is collapsible');
+page.endFieldset();
+// Actions
+page.button('save', 'Save', 'primary', true);
+page.button('delete', 'Delete', 'danger');
+page.button('cancel', 'Cancel', 'secondary');
+page.toJSON()`;
 const JS_SOURCES = {
   'about-layout.json': JS_ABOUT,
   'feedback-form.json': JS_FORM,
@@ -757,119 +871,8 @@ const EXAMPLE_ALL = {
   }
 };
 
-const JS_ALL = `// All 29 DynamicLayout component types demo
-const page = new JsLayout('All DynamicLayout Components');
-page.row();
-// Column 1: Inputs & Selection
-page.col(12, 6);
-page.fieldset('Inputs');
-page.input('textInput', 'Text Input', { required: true });
-page.input('numberInput', 'Number', { dataType: 'INT' });
-page.input('dateInput', 'Date', { dataType: 'DATE' });
-page.input('emailInput', 'Email', { required: true });
-page.textarea('notes', 'Textarea', 4);
-page.endFieldset();
-page.fieldset('Selection');
-page.select('country', 'Select', [['us','USA'],['de','Germany'],['jp','Japan']]);
-page.checkbox('agree', 'Checkbox');
-page.endFieldset();
-page.endCol();
-// Column 2: Display
-page.col(12, 6);
-page.fieldset('Display');
-page.label('Text Label');
-page.alert('Success alert', 'success');
-page.alert('Info message', 'info');
-page.badge('New', 'primary');
-page.spacer(2);
-page.endFieldset();
-page.endCol();
-page.endRow();
-// Collapsible fieldset
-page.fieldset('Collapsible Section');
-page.label('This section is collapsible');
-page.endFieldset();
-// Actions
-page.button('save', 'Save', 'primary', true);
-page.button('delete', 'Delete', 'danger');
-page.button('cancel', 'Cancel', 'secondary');
-page.toJSON()`;
 
-const KOTLIN_ALL = `val layout = UILayout("'All DynamicLayout Components")
 
-layout.add(
-    UIRow().add(
-        UICol(UILength(xs = 12, md = 6)).add(
-            UIFieldset(title = "'Inputs")
-                .add(UIInput("textInput", label = "'Text Input", required = true))
-                .add(UIInput("numberInput", label = "'Number", dataType = UIDataType.INT))
-                .add(UIInput("dateInput", label = "'Date", dataType = UIDataType.DATE))
-                .add(UIInput("emailInput", label = "'Email", required = true))
-                .add(UITextArea("notes", label = "'Textarea", rows = 4))
-        ).add(
-            UIFieldset(title = "'Selection")
-                .add(UISelect("country", label = "'Select",
-                    values = listOf(
-                        UISelectValue("us", "USA"),
-                        UISelectValue("de", "Germany"),
-                        UISelectValue("jp", "Japan")
-                    )))
-                .add(UICheckbox("agree", label = "'Checkbox"))
-        ),
-        UICol(UILength(xs = 12, md = 6)).add(
-            UIFieldset(title = "'Display")
-                .add(UILabel("'Text Label"))
-                .add(UIAlert(message = "'Success alert", color = "success"))
-                .add(UIAlert(message = "'Info message", color = "info"))
-                .add(UIBadge(title = "'New", color = "primary"))
-                .add(UISpacer(width = 2))
-        )
-    )
-)
-
-layout.add(
-    UIFieldset(title = "'Collapsible Section", collapsed = true)
-        .add(UILabel("'This section is collapsible"))
-)
-
-layout.addAction(UIButton.createDefaultButton(title = "'Save"))
-layout.addAction(UIButton.createDangerButton(id = "delete", title = "'Delete"))
-layout.addAction(UIButton.createCancelButton())
-LayoutUtils.process(layout)
-return FormLayoutData(null, layout, serverData)`;
-
-const CPP_ALL = `DL b = dl_begin(buf, sizeof(buf), "All Components");
-
-dl_row(&b);
-dl_col(&b, 12, 6);
-dl_fieldset(&b, "Inputs");
-dl_input(&b, "textInput", "Text Input");
-dl_input(&b, "emailInput", "Email");
-dl_textarea(&b, "notes", "Textarea", 4);
-dl_end_fieldset(&b);
-dl_fieldset(&b, "Selection");
-const char *ids[] = {"us","de","jp"};
-const char *lbls[] = {"USA","Germany","Japan"};
-dl_select(&b, "country", "Select", ids, lbls, 3);
-dl_checkbox(&b, "agree", "Checkbox");
-dl_end_fieldset(&b);
-dl_end_col(&b);
-dl_col(&b, 12, 6);
-dl_fieldset(&b, "Display");
-dl_label(&b, "Text Label");
-dl_alert(&b, "Success alert", "success");
-dl_badge(&b, "New", "primary");
-dl_end_fieldset(&b);
-dl_end_col(&b);
-dl_end_row(&b);
-dl_fieldset(&b, "Collapsible Section");
-dl_label(&b, "This section is collapsible");
-dl_end_fieldset(&b);
-dl_actions(&b);
-dl_button(&b, "save", "Save", "primary");
-dl_button(&b, "cancel", "Cancel", "secondary");
-dl_end_actions(&b);
-dl_end(&b);`;
 
 function Playground() {
   const [json, setJson] = useState(JSON.stringify(EXAMPLE_ALL, null, 2));
