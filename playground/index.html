@@ -685,6 +685,7 @@ function Playground() {
   const [error, setError] = useState(null);
   const [selectedPreset, setSelectedPreset] = useState('about-layout.json');
   const [mode, setMode] = useState('json'); // 'json' or 'kotlin' or 'cpp' or 'js'
+  const [dataVersion, setDataVersion] = useState(0);
 
   const parsed = useMemo(() => {
     try {
@@ -782,7 +783,7 @@ function Playground() {
           React.createElement('option', { value: 'feedback-form.json' }, 'Feedback Form'),
           React.createElement('option', { value: 'registration-form.json' }, 'Registration Form'),
         ),
-        React.createElement('button', { onClick: () => { setData({}); setResetKey(k => k + 1); setError(null); }, className: 'preset-btn', style: { marginLeft: 8, background: '#6c757d', color: '#fff', border: 'none', borderRadius: 3, padding: '2px 8px' } }, 'Reset Data'),
+        React.createElement('button', { onClick: () => { setData({}); setResetKey(k => k + 1); setDataVersion(v => v + 1); setError(null); }, className: 'preset-btn', style: { marginLeft: 8, background: '#6c757d', color: '#fff', border: 'none', borderRadius: 3, padding: '2px 8px' } }, 'Reset Data'),
       ),
       React.createElement('textarea', {
         value: editorValue,
@@ -811,7 +812,7 @@ function Playground() {
           React.createElement('h5', null, 'No valid JSON'),
           React.createElement('p', null, 'Paste a DynamicLayout JSON or select a preset above.')
         ) :
-        React.createElement(DynamicLayout, { key: resetKey,
+        React.createElement(DynamicLayout, { key: 'dl-' + dataVersion,
           ui: parsed.ui,
           data,
           setData: (update) => {
