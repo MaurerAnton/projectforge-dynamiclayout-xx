@@ -3,15 +3,18 @@
 
 /*
  * DynamicLayout C API — generate layout JSON from C/C++.
- * Build: gcc -o layout layout.c -lm
+ *
+ * Single-header library. Include once, use anywhere.
+ * Requires: C99 or C++98.
  *
  * Example:
- *   char json[4096];
- *   DL_Builder b = dl_begin(json, sizeof(json), "My Page");
- *   dl_fieldset(&b, "Info",
- *     dl_label(&b, "Hello from C!"), NULL);
+ *   char buf[8192];
+ *   DL b = dl_begin(buf, sizeof(buf), "My Page");
+ *   dl_fieldset(&b, "Info");
+ *   dl_label(&b, "Hello from C!");
+ *   dl_end_fieldset(&b);
  *   dl_end(&b);
- *   printf("%s", json);
+ *   puts(buf);
  */
 
 #include <stdio.h>
@@ -23,230 +26,271 @@
 extern "C" {
 #endif
 
-/* === Builder === */
+/* === State === */
 typedef struct {
     char *buf;
     size_t size;
     size_t pos;
     int depth;
-    int comma;  /* 1 = need comma before next value */
-} DL_Builder;
+    int comma;
+} DL;
 
 /* === Internal helpers === */
-static void dl_putc(DL_Builder *b, char c) {
-    if (b->pos < b->size - 1) b->buf[b->pos++] = c;
+static void dlc(DL *b, char c) { if (b->pos < b->size - 1) b->buf[b->pos++] = c; }
+static void dls(DL *b, const char *s) { while (*s && b->pos < b->size - 1) b->buf[b->pos++] = *s++; }
+
+static void dl_indent(DL *b) {
+    dlc(b, '\n');
+    for (int i = 0; i < b->depth; i++) dls(b, "  ");
 }
 
-static void dl_puts(DL_Builder *b, const char *s) {
-    while (*s && b->pos < b->size - 1) b->buf[b->pos++] = *s++;
-}
+static void dl_cm(DL *b) { if (b->comma) dlc(b, ','); b->comma = 0; }
+static void dl_cma(DL *b) { dlc(b, ','); }
 
-static void dl_indent(DL_Builder *b) {
-    dl_putc(b, '\n');
-    for (int i = 0; i < b->depth; i++) dl_puts(b, "  ");
-}
-
-static void dl_comma(DL_Builder *b) {
-    if (b->comma) dl_putc(b, ',');
-}
-
-static void dl_escape(DL_Builder *b, const char *s) {
-    dl_putc(b, '"');
+static void dl_escape(DL *b, const char *s) {
+    dlc(b, '"');
     while (*s) {
         switch (*s) {
-            case '"': dl_puts(b, "\\\""); break;
-            case '\\': dl_puts(b, "\\\\"); break;
-            case '\n': dl_puts(b, "\\n"); break;
-            case '\r': dl_puts(b, "\\r"); break;
-            case '\t': dl_puts(b, "\\t"); break;
-            default: dl_putc(b, *s); break;
+            case '"': dls(b, "\\\""); break;
+            case '\\': dls(b, "\\\\"); break;
+            case '\n': dls(b, "\\n"); break;
+            case '\r': dls(b, "\\r"); break;
+            case '\t': dls(b, "\\t"); break;
+            default: dlc(b, *s); break;
         }
         s++;
     }
-    dl_putc(b, '"');
+    dlc(b, '"');
 }
 
-static void dl_str(DL_Builder *b, const char *key, const char *val) {
+/* Write key-value pair (string value) */
+static void dl_kv(DL *b, const char *key, const char *val) {
     if (!val) return;
-    dl_comma(b);
+    if (b->comma) { dlc(b, ','); b->comma = 0; }
     dl_indent(b);
-    dl_escape(b, key);
-    dl_puts(b, ": ");
-    dl_escape(b, val);
+    dl_escape(b, key); dls(b, ": "); dl_escape(b, val);
     b->comma = 1;
 }
 
-static void dl_bool(DL_Builder *b, const char *key, int val) {
-    if (!val) return;
-    dl_comma(b);
-    dl_indent(b);
-    dl_escape(b, key);
-    dl_puts(b, ": true");
+static void dl_kv_bool(DL *b, const char *key) {
+    dl_cm(b); dl_cma(b); dl_indent(b);
+    dl_escape(b, key); dls(b, ": true");
     b->comma = 1;
 }
 
-static void dl_arr(DL_Builder *b, const char *key) {
-    dl_comma(b);
+/* Write key and open array/object */
+static void dl_arr(DL *b, const char *key) {
+    if (b->comma) { dlc(b, ','); b->comma = 0; }
     dl_indent(b);
-    dl_escape(b, key);
-    dl_puts(b, ": [");
-    b->depth++;
-    b->comma = 0;
+    dl_escape(b, key); dls(b, ": [");
+    b->depth++; b->comma = 0;
 }
 
-static void dl_arr_end(DL_Builder *b) {
-    b->depth--;
+static void dl_obj(DL *b) {
+    if (b->comma) { dlc(b, ','); b->comma = 0; }
     dl_indent(b);
-    dl_putc(b, ']');
-    b->comma = 1;
+    dlc(b, '{'); b->depth++; b->comma = 0;
 }
 
-static void dl_obj(DL_Builder *b) {
-    dl_comma(b);
-    dl_indent(b);
-    dl_putc(b, '{');
-    b->depth++;
-    b->comma = 0;
+static void dl_close_arr(DL *b) {
+    b->depth--; dl_indent(b); dlc(b, ']'); b->comma = 1;
 }
 
-static void dl_obj_end(DL_Builder *b) {
-    b->depth--;
-    dl_indent(b);
-    dl_putc(b, '}');
-    b->comma = 1;
+static void dl_close_obj(DL *b) {
+    b->depth--; dl_indent(b); dlc(b, '}'); b->comma = 1;
 }
 
-/* === Public API === */
+/* Write a list of string values (for SELECT options) */
+static void dl_values(DL *b, const char *const *ids, const char *const *labels, int count) {
+    dl_arr(b, "values");
+    for (int i = 0; i < count; i++) {
+        dl_obj(b);
+        dl_kv(b, "id", ids[i]);
+        dl_kv(b, "displayName", labels[i]);
+        dl_close_obj(b);
+    }
+    dl_close_arr(b);
+}
 
-/* Start building a layout. Returns a builder. */
-static DL_Builder dl_begin(char *buffer, size_t size, const char *title) {
-    DL_Builder b = { buffer, size, 0, 0, 0 };
-    dl_puts(&b, "{\n  \"ui\": {");
-    b.depth = 2;
-    b.comma = 0;
-    dl_str(&b, "title", title);
-    dl_comma(&b);
-    dl_indent(&b);
-    dl_puts(&b, "\"layout\": [");
-    b.depth = 3;
-    b.comma = 0;
+/* === BEGIN: Public API === */
+
+/* Start a new layout. Returns builder state. */
+static DL dl_begin(char *buffer, size_t size, const char *title) {
+    DL b = { buffer, size, 0, 0, 0 };
+    dls(&b, "{\"ui\":{");
+    b.depth = 2; b.comma = 0;
+    dl_kv(&b, "title", title);
+    dl_arr(&b, "layout");
     return b;
 }
 
-/* Finish layout JSON. Call at the end. */
-static void dl_end(DL_Builder *b) {
-    // Close layout array elements
-    b->depth = 2;  // back to layout array level
-    dl_comma(b);
-    // 
-    // Actually let me just write the ending directly
-    b->depth = 2;
-    dl_indent(b);
-    dl_puts(b, "],");  // close layout array
-    dl_indent(b);
-    dl_puts(b, "\"translations\": {},");
-    dl_indent(b);
-    dl_puts(b, "\"userAccess\": { \"cancel\": true }");
-    b->depth = 1;
-    dl_indent(b);
-    dl_puts(b, "}");   // close "ui"
-    b->depth = 0;
-    dl_indent(b);
-    dl_puts(b, "}");   // close root
-    b->buf[b->pos] = 0; /* null-terminate */
+/* Finish the layout. Closes all open structures. */
+static void dl_end(DL *b) {
+    dl_close_arr(b);                         /* ] close layout array */
+    b->comma = 0; dls(b, ",");
+    dls(b, "\"translations\":{},");
+    dls(b, "\"userAccess\":{\"cancel\":true}");
+    dls(b, "}}");                           /* close ui + root */
+    dlc(b, '\n'); b->buf[b->pos] = 0;
 }
 
-/* Add a FIELDSET. */
-static void dl_fieldset(DL_Builder *b, const char *title, ...) {
+/* === Fieldset (container) === */
+static void dl_fieldset(DL *b, const char *title) {
     dl_obj(b);
-    dl_str(b, "type", "FIELDSET");
-    dl_str(b, "key", "fs");
-    dl_str(b, "title", title);
-
-    /* Children are passed as variadic arguments terminated by NULL */
-    va_list args;
-    va_start(args, title);
-
-    /* Since children can't be function calls directly with va_args,
-       we handle them differently. See dl_label for the pattern.
-       For now, just open the content array. */
+    dl_kv(b, "type", "FIELDSET");
+    dl_kv(b, "key", "fs");
+    dl_kv(b, "title", title);
     dl_arr(b, "content");
-
-    /* Process children */
-    const char *child_type;
-    while ((child_type = va_arg(args, const char *)) != NULL) {
-        if (strcmp(child_type, "label") == 0) {
-            const char *text = va_arg(args, const char *);
-            dl_obj(b);
-            dl_str(b, "type", "LABEL");
-            dl_str(b, "key", "lbl");
-            dl_str(b, "label", text);
-            dl_obj_end(b);
-        } else if (strcmp(child_type, "input") == 0) {
-            const char *id = va_arg(args, const char *);
-            const char *label = va_arg(args, const char *);
-            dl_obj(b);
-            dl_str(b, "type", "INPUT");
-            dl_str(b, "key", "inp");
-            dl_str(b, "id", id);
-            dl_str(b, "label", label);
-            dl_obj_end(b);
-        } else if (strcmp(child_type, "button") == 0) {
-            const char *id = va_arg(args, const char *);
-            const char *title2 = va_arg(args, const char *);
-            const char *color = va_arg(args, const char *);
-            dl_obj(b);
-            dl_str(b, "type", "BUTTON");
-            dl_str(b, "key", "btn");
-            dl_str(b, "id", id);
-            dl_str(b, "title", title2);
-            dl_str(b, "color", color);
-            dl_obj_end(b);
-        }
-    }
-
-    dl_arr_end(b);
-    dl_obj_end(b);
 }
 
-/* Quick helper: add a single label with fieldset */
-static void dl_about(DL_Builder *b, const char *title, const char *text) {
+static void dl_end_fieldset(DL *b) {
+    dl_close_arr(b);    /* ] content */
+    dl_close_obj(b);    /* } fieldset */
+}
+
+/* === ROW (flex row) === */
+static void dl_row(DL *b) {
     dl_obj(b);
-    dl_str(b, "type", "FIELDSET");
-    dl_str(b, "key", "fs1");
-    dl_str(b, "title", title);
+    dl_kv(b, "type", "ROW");
+    dl_kv(b, "key", "row");
     dl_arr(b, "content");
-    dl_obj(b);
-    dl_str(b, "type", "LABEL");
-    dl_str(b, "key", "l1");
-    dl_str(b, "label", text);
-    dl_obj_end(b);
-    dl_arr_end(b);
-    dl_obj_end(b);
 }
 
-/* Add actions array */
-static void dl_actions(DL_Builder *b, ...) {
+static void dl_end_row(DL *b) {
+    dl_close_arr(b);
+    dl_close_obj(b);
+}
+
+/* === COL (flex column) === */
+static void dl_col(DL *b, int xs, int md) {
+    dl_obj(b);
+    dl_kv(b, "type", "COL");
+    dl_kv(b, "key", "col");
+    /* Length object */
+    dl_cm(b); dl_cma(b); dl_indent(b);
+    dls(b, "\"length\":{");
+    if (xs) { dls(b, "\"xs\":"); char tmp[8]; snprintf(tmp,8,"%d",xs); dls(b, tmp); dl_cma(b); }
+    if (md) { dls(b, "\"md\":"); char tmp[8]; snprintf(tmp,8,"%d",md); dls(b, tmp); }
+    dls(b, "}");
+    b->comma = 1;
+    dl_arr(b, "content");
+}
+
+static void dl_end_col(DL *b) {
+    dl_close_arr(b);
+    dl_close_obj(b);
+}
+
+/* === LABEL === */
+static void dl_label(DL *b, const char *text) {
+    dl_obj(b);
+    dl_kv(b, "type", "LABEL");
+    dl_kv(b, "key", "lbl");
+    dl_kv(b, "label", text);
+    dl_close_obj(b);
+}
+
+/* === INPUT === */
+static void dl_input(DL *b, const char *id, const char *label) {
+    dl_obj(b);
+    dl_kv(b, "type", "INPUT");
+    dl_kv(b, "key", "inp");
+    dl_kv(b, "id", id);
+    dl_kv(b, "label", label);
+    dl_close_obj(b);
+}
+
+/* === TEXTAREA === */
+static void dl_textarea(DL *b, const char *id, const char *label, int rows) {
+    dl_obj(b);
+    dl_kv(b, "type", "TEXTAREA");
+    dl_kv(b, "key", "ta");
+    dl_kv(b, "id", id);
+    dl_kv(b, "label", label);
+    if (rows) { char tmp[8]; snprintf(tmp,8,"%d",rows); dl_kv(b, "rows", tmp); }
+    dl_close_obj(b);
+}
+
+/* === CHECKBOX === */
+static void dl_checkbox(DL *b, const char *id, const char *label) {
+    dl_obj(b);
+    dl_kv(b, "type", "CHECKBOX");
+    dl_kv(b, "key", "cb");
+    dl_kv(b, "id", id);
+    dl_kv(b, "label", label);
+    dl_close_obj(b);
+}
+
+/* === SELECT (dropdown) === */
+static void dl_select(DL *b, const char *id, const char *label,
+                       const char *const *ids, const char *const *labels, int count) {
+    dl_obj(b);
+    dl_kv(b, "type", "SELECT");
+    dl_kv(b, "key", "sel");
+    dl_kv(b, "id", id);
+    dl_kv(b, "label", label);
+    dl_values(b, ids, labels, count);
+    dl_close_obj(b);
+}
+
+/* === BUTTON === */
+static void dl_button(DL *b, const char *id, const char *title, const char *color) {
+    dl_obj(b);
+    dl_kv(b, "type", "BUTTON");
+    dl_kv(b, "key", "btn");
+    dl_kv(b, "id", id);
+    dl_kv(b, "title", title);
+    dl_kv(b, "color", color);
+    dl_close_obj(b);
+}
+
+/* === Actions (buttons at bottom) === */
+static void dl_actions(DL *b) {
     dl_arr(b, "actions");
-    va_list args;
-    va_start(args, b);
-    const char *type;
-    while ((type = va_arg(args, const char *)) != NULL) {
-        if (strcmp(type, "button") == 0) {
-            const char *id = va_arg(args, const char *);
-            const char *title = va_arg(args, const char *);
-            const char *color = va_arg(args, const char *);
-            dl_obj(b);
-            dl_str(b, "type", "BUTTON");
-            dl_str(b, "key", "btn");
-            dl_str(b, "id", id);
-            dl_str(b, "title", title);
-            dl_str(b, "color", color);
-            dl_obj_end(b);
-        }
-    }
-    va_end(args);
-    dl_arr_end(b);
+}
+
+static void dl_end_actions(DL *b) {
+    dl_close_arr(b);
+}
+
+/* === ALERT === */
+static void dl_alert(DL *b, const char *message, const char *color) {
+    dl_obj(b);
+    dl_kv(b, "type", "ALERT");
+    dl_kv(b, "key", "alert");
+    dl_kv(b, "message", message);
+    dl_kv(b, "color", color);
+    dl_close_obj(b);
+}
+
+/* === BADGE === */
+static void dl_badge(DL *b, const char *title, const char *color) {
+    dl_obj(b);
+    dl_kv(b, "type", "BADGE");
+    dl_kv(b, "key", "bdg");
+    dl_kv(b, "title", title);
+    dl_kv(b, "color", color);
+    dl_close_obj(b);
+}
+
+/* Quick helper: add a fieldset with one label */
+static void dl_section(DL *b, const char *title, const char *text) {
+    dl_fieldset(b, title);
+    dl_label(b, text);
+    dl_end_fieldset(b);
+}
+
+/* Quick helper: add a feedback form */
+static void dl_feedback_form(DL *b) {
+    dl_fieldset(b, "Your Details");
+    dl_input(b, "name", "Name");
+    dl_input(b, "email", "Email");
+    dl_textarea(b, "message", "Message", 5);
+    dl_end_fieldset(b);
+    dl_actions(b);
+    dl_button(b, "send", "Send", "primary");
+    dl_button(b, "cancel", "Cancel", "secondary");
+    dl_end_actions(b);
 }
 
 #ifdef __cplusplus

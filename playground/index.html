@@ -463,37 +463,58 @@ const KOTLIN_SOURCES = {
 };
 
 // === C++ source for each preset (from dynamiclayout.h) ===
-const CPP_ABOUT = `DL_Builder b = dl_begin(json, sizeof(json), "About");
-dl_about(&b, "Info", "DynamicLayout Engine v0.1.0");
-dl_about(&b, "License", "GPLv3");
-dl_about(&b, "Links", "Website: projectforge.org");
+const CPP_ABOUT = `char buf[4096];
+DL b = dl_begin(buf, sizeof(buf), "About");
+
+dl_section(&b, "Info", "DynamicLayout Engine v0.1.0");
+dl_section(&b, "License", "GPLv3");
+
+dl_end(&b);
+// buf now contains the JSON — send to React */`;
+
+const CPP_FORM = `char buf[8192];
+DL b = dl_begin(buf, sizeof(buf), "Feedback");
+
+dl_fieldset(&b, "Your Details");
+dl_input(&b, "name", "Name");
+dl_input(&b, "email", "Email");
+dl_textarea(&b, "message", "Message", 5);
+dl_end_fieldset(&b);
+
+dl_actions(&b);
+dl_button(&b, "send", "Send", "primary");
+dl_button(&b, "cancel", "Cancel", "secondary");
+dl_end_actions(&b);
+
 dl_end(&b);`;
 
-const CPP_FORM = `DL_Builder b = dl_begin(json, sizeof(json), "Feedback");
+const CPP_REGISTRATION = `char buf[16384];
+DL b = dl_begin(buf, sizeof(buf), "Registration");
 
-dl_fieldset(&b, "Your Details",
-  "input", "name",  "Name",
-  "input", "email", "Email",
-  "input", "subject", "Subject",
-  NULL);
-dl_end(&b);
+dl_fieldset(&b, "Personal Info");
+dl_input(&b, "firstName", "First Name");
+dl_input(&b, "lastName", "Last Name");
+dl_input(&b, "email", "Email");
+dl_end_fieldset(&b);
 
-// See dynamiclayout.h for dl_fieldset() variadic API
-// Available child types: "label", "input", "button"`;
+dl_fieldset(&b, "Details");
+dl_input(&b, "phone", "Phone");
 
-const CPP_REGISTRATION = `DL_Builder b = dl_begin(json, sizeof(json), "Registration");
+const char *cids[] = {"us","de","jp"};
+const char *clbl[] = {"USA","Germany","Japan"};
+dl_select(&b, "country", "Country", cids, clbl, 3);
 
-dl_fieldset(&b, "Personal Info",
-  "input", "firstName", "First Name",
-  "input", "lastName",  "Last Name",
-  "input", "email",     "Email",
-  NULL);
+dl_checkbox(&b, "agree", "I agree");
+dl_end_fieldset(&b);
 
-dl_fieldset(&b, "Details",
-  "input", "phone",   "Phone",
-  NULL);
-// Note: SELECT, CHECKBOX not yet supported in C API
-// Use dl_obj()/dl_obj_end() for custom elements
+dl_fieldset(&b, "Additional Info");
+dl_textarea(&b, "notes", "Notes", 3);
+dl_end_fieldset(&b);
+
+dl_actions(&b);
+dl_button(&b, "register", "Register", "primary");
+dl_button(&b, "cancel", "Cancel", "secondary");
+dl_end_actions(&b);
 
 dl_end(&b);`;
 
@@ -550,8 +571,8 @@ function Playground() {
   const cpp = CPP_SOURCES[selectedPreset] || '// No C++ source available yet';
 
   const editorValue = mode === 'json' ? json : mode === 'kotlin' ? kotlin : cpp;
-  const isReadOnly = mode !== 'json';
-  const statusText = mode === 'json' ? `${chars} chars` : mode === 'kotlin' ? 'Kotlin DSL — read only' : 'C++ (dynamiclayout.h) — read only';
+  const isReadOnly = false;
+  const statusText = mode === 'json' ? `${chars} chars` : mode === 'kotlin' ? 'Kotlin DSL — editable (copy to your project)' : 'C++ (dynamiclayout.h) — editable (copy to your project)';
 
   return React.createElement('div', { className: 'playground' },
     React.createElement('div', { className: 'pane editor-pane' },
