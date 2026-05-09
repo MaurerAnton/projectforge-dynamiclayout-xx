@@ -4,6 +4,7 @@
 
 [![CI](https://github.com/MaurerAnton/projectforge-dynamiclayout/actions/workflows/build.yml/badge.svg)](https://github.com/MaurerAnton/projectforge-dynamiclayout/actions)
 [![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
+[![Playground](https://img.shields.io/badge/Playground-try%20it%20online-brightgreen)](https://maureranton.github.io/projectforge-dynamiclayout/playground/)
 
 **Server-Driven UI Engine.** Kotlin DSL → JSON → React / Native.
 
