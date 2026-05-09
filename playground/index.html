@@ -386,14 +386,90 @@ const EXAMPLE_REGISTRATION = {
   }
 };
 
+// === Kotlin DSL source for each preset ===
+const KOTLIN_ABOUT = `val layout = UILayout("menu.help.about")
+
+layout.add(
+    UIFieldset(title = "'About")
+        .add(UILabel("'DynamicLayout Engine v0.1.0"))
+        .add(UILabel("'Server-Driven UI for Kotlin + React"))
+        .add(UILabel("'License: GPLv3"))
+)
+
+LayoutUtils.process(layout)
+return FormLayoutData(null, layout, serverData)`;
+
+const KOTLIN_FORM = `val layout = UILayout("'Feedback")
+
+layout.add(
+    UIFieldset(title = "'Your Details")
+        .add(
+            UIRow()
+                .add(UICol(UILength(xs = 12, md = 6))
+                    .add(UIInput("name", label = "'Name", required = true)))
+                .add(UICol(UILength(xs = 12, md = 6))
+                    .add(UIInput("email", label = "'Email", required = true)))
+        )
+        .add(UIInput("subject", label = "'Subject", required = true))
+        .add(UITextArea("message", label = "'Message", rows = 5))
+)
+
+layout.addAction(UIButton.createDefaultButton(title = "'Submit"))
+layout.addAction(UIButton.createCancelButton())
+LayoutUtils.process(layout)
+return FormLayoutData(null, layout, serverData)`;
+
+const KOTLIN_REGISTRATION = `val layout = UILayout("'Registration")
+
+layout.add(
+    UIRow().add(
+        UICol(UILength(xs = 12, md = 6))
+            .add(
+                UIFieldset(title = "'Personal Info")
+                    .add(UIInput("firstName", label = "'First Name", required = true))
+                    .add(UIInput("lastName", label = "'Last Name", required = true))
+                    .add(UIInput("email", label = "'Email", required = true))
+            ),
+        UICol(UILength(xs = 12, md = 6))
+            .add(
+                UIFieldset(title = "'Details")
+                    .add(UIInput("phone", label = "'Phone"))
+                    .add(UISelect("country", label = "'Country",
+                        values = listOf(
+                            UISelectValue("us", "United States"),
+                            UISelectValue("de", "Germany"),
+                            UISelectValue("jp", "Japan")
+                        )))
+                    .add(UICheckbox("agree", label = "'I agree to the terms"))
+            )
+    )
+)
+
+layout.add(
+    UIFieldset(title = "'Additional Info", collapsed = true)
+        .add(UITextArea("notes", label = "'Notes", rows = 3))
+        .add(UIInput("startDate", label = "'Start Date", dataType = UIDataType.DATE))
+)
+
+layout.addAction(UIButton.createDefaultButton(title = "'Register"))
+layout.addAction(UIButton.createCancelButton())
+LayoutUtils.process(layout)
+return FormLayoutData(null, layout, serverData)`;
+
+const KOTLIN_SOURCES = {
+  'about-layout.json': KOTLIN_ABOUT,
+  'feedback-form.json': KOTLIN_FORM,
+  'registration-form.json': KOTLIN_REGISTRATION,
+};
+
 // === Playground App ===
 
 function Playground() {
   const [json, setJson] = useState(JSON.stringify(EXAMPLE_ABOUT, null, 2));
   const [data, setData] = useState({});
   const [error, setError] = useState(null);
-  const [minimap, setMinimap] = useState(false);
   const [selectedPreset, setSelectedPreset] = useState('about-layout.json');
+  const [mode, setMode] = useState('json'); // 'json' or 'kotlin'
 
   const parsed = useMemo(() => {
     try {
@@ -418,7 +494,6 @@ function Playground() {
           return;
         }
       }
-      // Fallback to built-in examples
       const examples = { 'about-layout.json': EXAMPLE_ABOUT, 'feedback-form.json': EXAMPLE_FORM, 'registration-form.json': EXAMPLE_REGISTRATION };
       const ex = examples[name] || EXAMPLE_ABOUT;
       setJson(JSON.stringify(ex, null, 2));
@@ -430,12 +505,20 @@ function Playground() {
 
   const chars = json.length;
   const isValid = !error && parsed !== null;
+  const kotlin = KOTLIN_SOURCES[selectedPreset] || '// No Kotlin source available';
 
   return React.createElement('div', { className: 'playground' },
-    // Editor pane
     React.createElement('div', { className: 'pane editor-pane' },
       React.createElement('div', { className: 'pane-header' },
-        React.createElement('span', null, '📝 Layout JSON'),
+        React.createElement('button', {
+          onClick: () => setMode('json'),
+          style: { fontWeight: mode === 'json' ? 700 : 400, background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 14, color: mode === 'json' ? '#0d6efd' : '#6c757d' }
+        }, '📝 JSON'),
+        React.createElement('span', null, ' / '),
+        React.createElement('button', {
+          onClick: () => setMode('kotlin'),
+          style: { fontWeight: mode === 'kotlin' ? 700 : 400, background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 14, color: mode === 'kotlin' ? '#0d6efd' : '#6c757d' }
+        }, '💠 Kotlin'),
         React.createElement('select', { value: selectedPreset, onChange: e => loadPreset(e.target.value), style: { marginLeft: 'auto', fontSize: 13, padding: '2px 4px' } },
           React.createElement('option', { value: 'about-layout.json' }, 'About Page'),
           React.createElement('option', { value: 'feedback-form.json' }, 'Feedback Form'),
@@ -443,20 +526,30 @@ function Playground() {
         ),
         React.createElement('button', { onClick: () => { setData({}); setError(null); }, className: 'preset-btn', style: { marginLeft: 8, background: '#6c757d', color: '#fff', border: 'none', borderRadius: 3, padding: '2px 8px' } }, 'Reset Data'),
       ),
-      React.createElement('textarea', {
-        value: json,
-        onChange: e => setJson(e.target.value),
-        spellCheck: false,
-        placeholder: 'Paste your DynamicLayout JSON here...'
-      }),
-      React.createElement('div', { className: 'status-bar' },
-        React.createElement('span', null, `${chars} chars`),
-        isValid && React.createElement('span', { style: { color: '#198754' } }, 'JSON ✓'),
-        !isValid && error && React.createElement('span', { style: { color: '#dc3545' } }, 'JSON ✗'),
-      ),
-      error && React.createElement('div', { className: 'error-bar' }, error),
+      mode === 'json'
+        ? React.createElement('textarea', {
+            value: json,
+            onChange: e => setJson(e.target.value),
+            spellCheck: false,
+            placeholder: 'Paste your DynamicLayout JSON here...'
+          })
+        : React.createElement('textarea', {
+            value: kotlin,
+            readOnly: true,
+            spellCheck: false,
+            style: { backgroundColor: '#f4f5f7', color: '#24292e' }
+          }),
+      mode === 'json'
+        ? React.createElement('div', { className: 'status-bar' },
+            React.createElement('span', null, `${chars} chars`),
+            isValid && React.createElement('span', { style: { color: '#198754' } }, 'JSON ✓'),
+            !isValid && error && React.createElement('span', { style: { color: '#dc3545' } }, 'JSON ✗'),
+          )
+        : React.createElement('div', { className: 'status-bar' },
+            React.createElement('span', null, 'Kotlin DSL — read only'),
+          ),
+      error && mode === 'json' && React.createElement('div', { className: 'error-bar' }, error),
     ),
-    // Preview pane
     React.createElement('div', { className: 'pane preview-pane' },
       React.createElement('div', { className: 'pane-header' },
         React.createElement('span', null, '🔍 Live Preview'),
@@ -476,8 +569,7 @@ function Playground() {
         })
       ),
     ),
-  );
-}
+  );}
 
 ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(Playground));
 </script>

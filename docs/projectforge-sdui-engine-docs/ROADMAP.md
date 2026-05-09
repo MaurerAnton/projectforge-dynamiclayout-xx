@@ -158,7 +158,55 @@ Currently each `setData()` re-renders all 150+ elements. Target: only re-render 
 
 ---
 
-## 🔵 14. Variables + Expressions
+## 🟢 16. Interactive Kotlin Editor in Playground
+
+**Status: Next step.** Add a live Kotlin DSL editor that compiles to JSON and renders in real time.
+
+### What to build
+Extend the playground with a third mode: editable Kotlin source that gets compiled to JSON dynamically.
+
+### Options
+
+**Option A: Server-side compilation (recommended)**
+Add a `/compile` endpoint to the demo Node.js server that:
+1. Receives Kotlin DSL source code as a string
+2. Calls the DynamicLayout Kotlin compiler (via subprocess or embedded)
+3. Returns the compiled JSON
+
+Playground → POST Kotlin code → Server compiles → Returns JSON → Playground renders
+
+```kotlin
+// User writes this in playground:
+val layout = UILayout("'Hello")
+layout.add(UIFieldset(title = "'Test")
+    .add(UIInput("name", label = "'Name"))
+)
+LayoutUtils.process(layout)
+return DynamicLayoutJson.encode(layout)
+```
+
+```json
+// Server returns this:
+{ "ui": { "title": "Hello", "layout": [...] } }
+```
+
+**Option B: Kotlin/JS transpilation**
+Compile a subset of the DynamicLayout DSL to JavaScript using Kotlin/JS.
+Full Kotlin compilation in browser via Kotlin/Wasm or Kotlin/JS.
+
+| Aspect | Option A (server) | Option B (client) |
+|--------|:-----------------:|:-----------------:|
+| Setup complexity | Medium | High |
+| Latency | ~100ms (network) | ~10ms (local) |
+| Full Kotlin support | ✅ Yes | ⚠️ Subset |
+| Infrastructure | Node.js server | Kotlin/JS build |
+| Cost | One endpoint | Complex toolchain |
+
+### Current state
+JSON/Kotlin toggle already implemented in playground:
+- JSON mode: editable textarea with live preview
+- Kotlin mode: read-only DSL source for each preset
+- Next step: make Kotlin editable and compilable
 
 **Status: Planned.** Expression language similar to DivKit's `@{var + 1}`.
 Allows server-side to describe dynamic behavior without round-tripping to server.
@@ -227,3 +275,4 @@ Allows server-side to describe dynamic behavior without round-tripping to server
 | 13 | kotlinx.serialisation | 🔵 Long | Medium | High |
 | 14 | Variables + expressions | 🔵 Long | Low | High |
 | 15 | Interactive playground | ✅ Done | — | Low |
+| 16 | Kotlin editor in playground | 🟢 Next | High | Medium |
