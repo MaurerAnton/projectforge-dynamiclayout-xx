@@ -618,14 +618,14 @@ const CPP_SOURCES = {
 };
 
 // === JS source for each preset (uses JsLayout DSL — evaluated in real-time) ===
-const JS_ABOUT = `// JsLayout DSL — real-time executable
-const page = new JsLayout('About');
+const JS_ABOUT = `// JsLayout DSL — generates "About ProjectForge"
+const page = new JsLayout('About ProjectForge');
 page.fieldset('Info');
 page.label('DynamicLayout Engine v0.1.0');
 page.label('Server-Driven UI for Kotlin + React');
 page.endFieldset();
 page.fieldset('License');
-page.label('GPLv3 — dual license');
+page.label('Dual-licensed under GPLv3');
 page.endFieldset();
 page.toJSON()`;
 
@@ -728,59 +728,62 @@ function Playground() {
   const [jsCode, setJsCode] = useState(JS_ABOUT);
   const [jsError, setJsError] = useState(null);
 
-  // Execute JS code in real-time when in JS mode.
-  // Uses eval() which returns the last expression value.
-  // Runs immediately on mode change, debounced (400ms) on code edits.
+  // Eval JS code synchronously and update json
+  const evalJs = useCallback((code) => {
+    try {
+      const result = eval(code);
+      if (typeof result === 'string') {
+        JSON.parse(result);
+        setJson(result);
+        setJsError(null);
+      } else if (result && typeof result === 'object') {
+        setJson(JSON.stringify(result, null, 2));
+        setJsError(null);
+      }
+    } catch (e) {
+      setJsError(e.message);
+    }
+  }, []);
+
+  // Handle mode switches
+  const switchMode = useCallback((newMode) => {
+    setMode(newMode);
+    if (newMode === 'js') {
+      // When entering JS mode, eval the current JS code immediately
+      setTimeout(() => evalJs(jsCode), 50);
+    }
+  }, [jsCode, evalJs]);
+
+  // Debounced JS eval on code edits (only in JS mode)
   useEffect(() => {
     if (mode !== 'js') return;
-    const run = () => {
-      try {
-        // eslint-disable-next-line no-eval
-        const result = eval(jsCode);
-        if (typeof result === 'string') {
-          JSON.parse(result); // validate
-          setJson(result);
-          setJsError(null);
-        } else if (result && typeof result === 'object') {
-          setJson(JSON.stringify(result, null, 2));
-          setJsError(null);
-        }
-      } catch (e) {
-        setJsError(e.message);
-      }
-    };
-    // Debounce edits, but run immediately on mode enter
-    if (jsCode === JS_SOURCES[selectedPreset]) {
-      run(); // just entered JS mode, eval immediately
-    } else {
-      const timer = setTimeout(run, 400);
-      return () => clearTimeout(timer);
-    }
-  }, [jsCode, mode, selectedPreset]);
+    const timer = setTimeout(() => evalJs(jsCode), 400);
+    return () => clearTimeout(timer);
+  }, [jsCode, mode, evalJs]);
 
   const editorValue = mode === 'json' ? json : mode === 'kotlin' ? kotlin : mode === 'cpp' ? cpp : jsCode;
-  const statusText = mode === 'json' ? `${chars} chars` : mode === 'kotlin' ? 'Kotlin DSL — editable (JS equivalent only)' : mode === 'cpp' ? 'C (dynamiclayout.h) — editable' : jsError ? `JS Error: ${jsError}` : 'JavaScript (JsLayout DSL) — live ✨';
+  const statusText = mode === 'json' ? `${chars} chars` : mode === 'kotlin' ? 'Kotlin DSL — for reference only' : mode === 'cpp' ? 'C (dynamiclayout.h) — for reference only' : jsError ? `JS Error: ${jsError}` : 'JavaScript (JsLayout DSL) — live ✨';
 
   return React.createElement('div', { className: 'playground' },
     React.createElement('div', { className: 'pane editor-pane' },
       React.createElement('div', { className: 'pane-header' },
         React.createElement('button', {
-          onClick: () => setMode('json'),
+          onClick: () => switchMode('json'),
           style: { fontWeight: mode === 'json' ? 700 : 400, background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 14, color: mode === 'json' ? '#0d6efd' : '#6c757d' }
         }, '📝 JSON'),
         React.createElement('span', null, ' / '),
         React.createElement('button', {
-          onClick: () => setMode('kotlin'),
+          onClick: () => switchMode('kotlin'),
           style: { fontWeight: mode === 'kotlin' ? 700 : 400, background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 14, color: mode === 'kotlin' ? '#0d6efd' : '#6c757d' }
         }, '💠 Kotlin'),
         React.createElement('span', null, ' / '),
         React.createElement('button', {
-          onClick: () => setMode('cpp'),
+          onClick: () => switchMode('cpp'),
           style: { fontWeight: mode === 'cpp' ? 700 : 400, background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 14, color: mode === 'cpp' ? '#0d6efd' : '#6c757d' }
         }, '⚙️ C++'),
         React.createElement('span', null, ' / '),
         React.createElement('button', {
-          onClick: () => setMode('js'),
+          onClick: () => switchMode('js'),
           style: { fontWeight: mode === 'js' ? 700 : 400, background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 14, color: mode === 'js' ? '#0d6efd' : '#6c757d' }
         }, '🟨 JS'),
         React.createElement('select', { value: selectedPreset, onChange: e => loadPreset(e.target.value), style: { marginLeft: 'auto', fontSize: 13, padding: '2px 4px' } },
@@ -793,11 +796,16 @@ function Playground() {
       React.createElement('textarea', {
         value: editorValue,
         onChange: e => {
-          if (mode === 'js') setJsCode(e.target.value);
-          else setJson(e.target.value);
+          const val = e.target.value;
+          if (mode === 'js') {
+            setJsCode(val);
+          } else if (mode === 'json') {
+            setJson(val);
+          }
+          // Kotlin and C++ modes: editing is for reference, preview doesn't change
         },
         spellCheck: false,
-        placeholder: mode === 'js' ? '// Edit JsLayout DSL — runs in real-time' : 'Paste your DynamicLayout JSON here...',
+        placeholder: mode === 'js' ? '// Edit JsLayout DSL — runs in real-time' : mode === 'json' ? 'Paste your DynamicLayout JSON here...' : 'Source code — for reference (copy to your project)',
         style: mode !== 'json' ? { backgroundColor: '#f4f5f7', color: '#24292e' } : {}
       }),
       React.createElement('div', { className: 'status-bar' },
