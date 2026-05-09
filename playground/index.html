@@ -728,11 +728,12 @@ function Playground() {
   const [jsCode, setJsCode] = useState(JS_ABOUT);
   const [jsError, setJsError] = useState(null);
 
-  // Execute JS code in real-time when in JS mode
-  // Uses eval() which returns the last expression value
+  // Execute JS code in real-time when in JS mode.
+  // Uses eval() which returns the last expression value.
+  // Runs immediately on mode change, debounced (400ms) on code edits.
   useEffect(() => {
     if (mode !== 'js') return;
-    const timer = setTimeout(() => {
+    const run = () => {
       try {
         // eslint-disable-next-line no-eval
         const result = eval(jsCode);
@@ -747,9 +748,15 @@ function Playground() {
       } catch (e) {
         setJsError(e.message);
       }
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [jsCode, mode]);
+    };
+    // Debounce edits, but run immediately on mode enter
+    if (jsCode === JS_SOURCES[selectedPreset]) {
+      run(); // just entered JS mode, eval immediately
+    } else {
+      const timer = setTimeout(run, 400);
+      return () => clearTimeout(timer);
+    }
+  }, [jsCode, mode, selectedPreset]);
 
   const editorValue = mode === 'json' ? json : mode === 'kotlin' ? kotlin : mode === 'cpp' ? cpp : jsCode;
   const statusText = mode === 'json' ? `${chars} chars` : mode === 'kotlin' ? 'Kotlin DSL — editable (JS equivalent only)' : mode === 'cpp' ? 'C (dynamiclayout.h) — editable' : jsError ? `JS Error: ${jsError}` : 'JavaScript (JsLayout DSL) — live ✨';
