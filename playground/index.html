@@ -728,26 +728,26 @@ function Playground() {
   const [jsCode, setJsCode] = useState(JS_ABOUT);
   const [jsError, setJsError] = useState(null);
 
-  // When mode switches to 'js', try to exec the current JS code
+  // Execute JS code in real-time when in JS mode
+  // Uses eval() which returns the last expression value
   useEffect(() => {
     if (mode !== 'js') return;
     const timer = setTimeout(() => {
       try {
-        const fn = new Function('JsLayout', jsCode);
-        const result = fn(JsLayout);
+        // eslint-disable-next-line no-eval
+        const result = eval(jsCode);
         if (typeof result === 'string') {
-          // Validate JSON
-          JSON.parse(result);
+          JSON.parse(result); // validate
           setJson(result);
           setJsError(null);
-        } else if (typeof result === 'object' && result !== null) {
+        } else if (result && typeof result === 'object') {
           setJson(JSON.stringify(result, null, 2));
           setJsError(null);
         }
       } catch (e) {
         setJsError(e.message);
       }
-    }, 300); // debounce
+    }, 400);
     return () => clearTimeout(timer);
   }, [jsCode, mode]);
 
@@ -813,7 +813,11 @@ function Playground() {
         React.createElement(DynamicLayout, {
           ui: parsed.ui,
           data,
-          setData: (update) => setData(prev => ({ ...prev, ...update })),
+          setData: (update) => {
+            if (update && typeof update === 'object' && Object.keys(update).length > 0) {
+              setData(prev => ({ ...prev, ...update }));
+            }
+          },
           callAction: (action) => alert(`Action triggered: ${action.id}`),
           validationErrors: parsed.ui?.validationErrors || [],
         })
