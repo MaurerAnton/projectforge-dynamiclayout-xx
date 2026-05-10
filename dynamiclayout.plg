@@ -1,0 +1,87 @@
+% DynamicLayout Prolog API — generate layout JSON from Prolog code.
+% Single-file. Zero dependencies. Works on SWI-Prolog 8+, Scryer, GNU Prolog.
+%
+% Example:
+%   ?- dl_begin("My Page", B), dl_fieldset(B, "Info", B1), dl_label(B1, "Hello from Prolog!", B2), dl_end_fieldset(B2, B3), dl_button(B3, "ok", "OK", "primary", true, B4), dl_end(B4, J), writeln(J).
+
+:- module(dynamiclayout, [dl_begin/2, dl_end/2, dl_fieldset/3, dl_end_fieldset/2,
+                         dl_label/3, dl_alert/4, dl_badge/4, dl_spacer/2, dl_spacer/3,
+                         dl_input/4, dl_input/5, dl_checkbox/3, dl_checkbox/4,
+                         dl_rating/3, dl_rating/4, dl_button/5, dl_button/6, dl_section/4]).
+
+dl_begin(Title, json{buf:Buf,depth:2,comma:false,cnt:0}) :-
+    string_concat('{"ui":{"title":"', Title, S1),
+    string_concat(S1, '","layout":[', Buf).
+
+dl_end(json{buf:Buf0,depth:D,comma:C,cnt:N}, Result) :-
+    string_concat(Buf0, '],"translations":{},"userAccess":{"cancel":true}}}', Result).
+
+dl_fieldset(json{buf:Buf0,depth:D,comma:C,cnt:N}, Title, json{buf:Buf,depth:D2,comma:false,cnt:N2}) :-
+    N2 is N + 1, D2 is D + 1,
+    format(string(Key), 'fs_~d', [N2]),
+    format(string(Buf), '~a,{"type":"FIELDSET","key":"~a","title":"~a","content":[', [Buf0, Key, Title]).
+
+dl_end_fieldset(json{buf:Buf0,depth:D,comma:C,cnt:N}, json{buf:Buf,depth:D2,comma:true,cnt:N}) :-
+    D2 is D - 1, string_concat(Buf0, ']}', Buf).
+
+dl_label(json{buf:Buf0,depth:D,comma:C,cnt:N}, Text, json{buf:Buf,depth:D,comma:true,cnt:N2}) :-
+    N2 is N + 1,
+    format(string(Key), 'l_~d', [N2]),
+    format(string(Buf), '~a,{"type":"LABEL","key":"~a","label":"~a"}', [Buf0, Key, Text]).
+
+dl_alert(json{buf:Buf0,depth:D,comma:C,cnt:N}, Msg, Color, json{buf:Buf,depth:D,comma:true,cnt:N2}) :-
+    N2 is N + 1,
+    format(string(Key), 'a_~d', [N2]),
+    format(string(Buf), '~a,{"type":"ALERT","key":"~a","message":"~a","color":"~a"}', [Buf0, Key, Msg, Color]).
+
+dl_badge(json{buf:Buf0,depth:D,comma:C,cnt:N}, Title, Color, json{buf:Buf,depth:D,comma:true,cnt:N2}) :-
+    N2 is N + 1,
+    format(string(Key), 'bd_~d', [N2]),
+    format(string(Buf), '~a,{"type":"BADGE","key":"~a","title":"~a","color":"~a"}', [Buf0, Key, Title, Color]).
+
+dl_spacer(json{buf:Buf0,depth:D,comma:C,cnt:N}, json{buf:Buf,depth:D,comma:true,cnt:N2}) :-
+    dl_spacer(json{buf:Buf0,depth:D,comma:C,cnt:N}, 20, json{buf:Buf,depth:D,comma:true,cnt:N2}).
+
+dl_spacer(json{buf:Buf0,depth:D,comma:C,cnt:N}, Px, json{buf:Buf,depth:D,comma:true,cnt:N2}) :-
+    N2 is N + 1,
+    format(string(Key), 'sp_~d', [N2]),
+    format(string(Buf), '~a,{"type":"SPACER","key":"~a","width":~d}', [Buf0, Key, Px]).
+
+dl_input(json{buf:Buf0,depth:D,comma:C,cnt:N}, Id, Label, json{buf:Buf,depth:D,comma:true,cnt:N2}) :-
+    dl_input(json{buf:Buf0,depth:D,comma:C,cnt:N}, Id, Label, false, json{buf:Buf,depth:D,comma:true,cnt:N2}).
+
+dl_input(json{buf:Buf0,depth:D,comma:C,cnt:N}, Id, Label, Required, json{buf:Buf,depth:D,comma:true,cnt:N2}) :-
+    N2 is N + 1,
+    format(string(Key), 'i_~d', [N2]),
+    ( Required = true -> Req = ',"required":true' ; Req = '' ),
+    format(string(Buf), '~a,{"type":"INPUT","key":"~a","id":"~a","label":"~a"~a}', [Buf0, Key, Id, Label, Req]).
+
+dl_checkbox(json{buf:Buf0,depth:D,comma:C,cnt:N}, Id, json{buf:Buf,depth:D,comma:true,cnt:N2}) :-
+    dl_checkbox(json{buf:Buf0,depth:D,comma:C,cnt:N}, Id, "", json{buf:Buf,depth:D,comma:true,cnt:N2}).
+
+dl_checkbox(json{buf:Buf0,depth:D,comma:C,cnt:N}, Id, Label, json{buf:Buf,depth:D,comma:true,cnt:N2}) :-
+    N2 is N + 1,
+    format(string(Key), 'cb_~d', [N2]),
+    format(string(Buf), '~a,{"type":"CHECKBOX","key":"~a","id":"~a","label":"~a"}', [Buf0, Key, Id, Label]).
+
+dl_rating(json{buf:Buf0,depth:D,comma:C,cnt:N}, Id, json{buf:Buf,depth:D,comma:true,cnt:N2}) :-
+    dl_rating(json{buf:Buf0,depth:D,comma:C,cnt:N}, Id, "", json{buf:Buf,depth:D,comma:true,cnt:N2}).
+
+dl_rating(json{buf:Buf0,depth:D,comma:C,cnt:N}, Id, Label, json{buf:Buf,depth:D,comma:true,cnt:N2}) :-
+    N2 is N + 1,
+    format(string(Key), 'rt_~d', [N2]),
+    format(string(Buf), '~a,{"type":"RATING","key":"~a","id":"~a","label":"~a"}', [Buf0, Key, Id, Label]).
+
+dl_button(json{buf:Buf0,depth:D,comma:C,cnt:N}, Id, Title, Color, json{buf:Buf,depth:D,comma:true,cnt:N2}) :-
+    dl_button(json{buf:Buf0,depth:D,comma:C,cnt:N}, Id, Title, Color, false, json{buf:Buf,depth:D,comma:true,cnt:N2}).
+
+dl_button(json{buf:Buf0,depth:D,comma:C,cnt:N}, Id, Title, Color, IsDefault, json{buf:Buf,depth:D,comma:true,cnt:N2}) :-
+    N2 is N + 1,
+    format(string(Key), 'btn_~d', [N2]),
+    ( IsDefault = true -> Def = ',"default":true' ; Def = '' ),
+    format(string(Buf), '~a,{"type":"BUTTON","key":"~a","id":"~a","title":"~a","color":"~a"~a}', [Buf0, Key, Id, Title, Color, Def]).
+
+dl_section(B0, Title, Text, B) :-
+    dl_fieldset(B0, Title, B1),
+    dl_label(B1, Text, B2),
+    dl_end_fieldset(B2, B).
