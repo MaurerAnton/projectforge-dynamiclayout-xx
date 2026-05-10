@@ -363,6 +363,44 @@ Reference implementation: `dynamiclayout.h` (C) — the simplest, most portable 
 
 ---
 
+## 1d. Client SDKs (renderers)
+
+PFDL JSON can be rendered in multiple client frameworks — not just React. Each renderer uses the same component registry pattern (`type` → component) and recursive rendering.
+
+```
+dynamiclayout-wc.js          # Web Components — works in any framework or no framework
+dynamiclayout-vue.vue         # Vue 3 component (Composition API)
+Layout.svelte                 # Svelte 5 component ($state runes)
+dynamiclayout_flutter.dart    # Flutter widget (iOS, Android, Web, Desktop)
+DynamicLayout.swiftui         # SwiftUI view (iOS 16+, macOS 13+)
+DynamicLayout.compose.kt      # Jetpack Compose (Android)
+```
+
+| Renderer | Type | Components | Notes |
+|----------|------|:----------:|-------|
+| **React** (production) | Framework | 30 | `DynamicRenderer` in `projectforge-webapp` |
+| **Web Components** | Framework-agnostic | 17 | `<dl-layout>` custom element — works everywhere |
+| **Vue 3** | Framework | 17 | Composition API, `provide/inject` for context |
+| **Svelte 5** | Framework | 17 | `$state` runes, event delegation |
+| **Flutter** | Mobile | 17 | `StatefulWidget` — cross-platform from one codebase |
+| **SwiftUI** | iOS/macOS | 17 | Native Apple — `@State` + `@Binding` |
+| **Jetpack Compose** | Android | 17 | Native Android — `mutableStateMapOf` for reactive data |
+
+### Porting to a new client framework
+
+The renderer pattern is the same across all frameworks:
+
+1. **Component registry** — map of `type` string to component/render function
+2. **Recursive renderer** — `renderLayout(content)` → iterate → dispatch by type
+3. **Data context** — reactive state + `setData(update)` → re-render changed fields
+4. **Implement components** — each ~20 lines. Start with containers (ROW, COL, FIELDSET), then inputs (INPUT, CHECKBOX, SELECT), then display (LABEL, ALERT).
+
+Reference implementation: `dynamiclayout-wc.js` — the framework-agnostic version. Works in any HTML page, testable with any PFDL JSON.
+
+All renderers produce the same visual output from identical JSON — the server doesn't know or care which client framework is consuming it.
+
+---
+
 ## 1c. JavaScript DSL (JsLayout)
 
 `JsLayout` is a **live, client-side** builder that mirrors the Kotlin DSL in pure JavaScript. Unlike Kotlin (compile, deploy, HTTP) and C (compile, run, pipe), JsLayout runs **directly in the browser** — edit a line, see the result instantly. This makes it the fastest feedback loop for designing layouts.

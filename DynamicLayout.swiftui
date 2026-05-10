@@ -1,0 +1,232 @@
+// DynamicLayout SwiftUI renderer — renders PFDL JSON in SwiftUI apps.
+// Single-file. Zero dependencies. Works on iOS 16+, macOS 13+, watchOS 9+.
+//
+// Example:
+//   DynamicLayoutView(spec: [
+//     "title": "My Page",
+//     "layout": [["type": "LABEL", "key": "l", "label": "Hello from SwiftUI!"]] as [Any]
+//   ])
+
+import SwiftUI
+
+// MARK: - Main View
+
+public struct DynamicLayoutView: View {
+    public let spec: [String: Any]?
+    @State private var data: [String: Any] = [:]
+    public var onUpdate: (([String: Any]) -> Void)?
+    public var onAction: ((String, [String: Any]?) -> Void)?
+
+    public init(spec: [String: Any]? = nil, data: [String: Any] = [:],
+                onUpdate: (([String: Any]) -> Void)? = nil,
+                onAction: ((String, [String: Any]?) -> Void)? = nil) {
+        self.spec = spec
+        self._data = State(initialValue: data)
+        self.onUpdate = onUpdate
+        self.onAction = onAction
+    }
+
+    public var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                if let title = spec?["title"] as? String {
+                    Text(title).font(.title2).bold()
+                    Divider().padding(.vertical, 8)
+                }
+                if let layout = spec?["layout"] as? [[String: Any]] {
+                    ForEach(Array(layout.enumerated()), id: \.offset) { _, el in
+                        ElementView(el: el, data: $data)
+                    }
+                }
+                if let actions = spec?["actions"] as? [[String: Any]], !actions.isEmpty {
+                    Divider().padding(.vertical, 8)
+                    HStack(spacing: 8) {
+                        ForEach(Array(actions.enumerated()), id: \.offset) { _, el in
+                            ElementView(el: el, data: $data, onAction: onAction)
+                        }
+                    }
+                }
+            }
+            .padding()
+        }
+        .onChange(of: data) { newData in
+            onUpdate?(newData)
+        }
+    }
+}
+
+// MARK: - Element Dispatcher
+
+struct ElementView: View {
+    let el: [String: Any]
+    @Binding var data: [String: Any]
+    var onAction: ((String, [String: Any]?) -> Void)?
+
+    var body: some View {
+        switch el["type"] as? String {
+        case "ROW":         RowEl(el: el, data: $data)
+        case "COL":         ColEl(el: el, data: $data)
+        case "FIELDSET":    FieldsetEl(el: el, data: $data)
+        case "GROUP":       GroupEl(el: el, data: $data)
+        case "INLINE_GROUP": HStack(spacing: 8) { contentView(el["content"]) }
+        case "LABEL":       Text(el["label"] as? String ?? "").font(.body.weight(.medium))
+        case "ALERT":       AlertEl(el: el)
+        case "BADGE":       BadgeEl(el: el)
+        case "SPACER":      Spacer().frame(height: CGFloat((el["width"] as? Int) ?? 20))
+        case "PROGRESS":    ProgressEl(el: el)
+        case "INPUT":       InputEl(el: el, data: $data)
+        case "CHECKBOX":    CheckboxEl(el: el, data: $data)
+        case "TEXTAREA":    TextareaEl(el: el, data: $data)
+        case "SELECT":      SelectEl(el: el, data: $data)
+        case "RATING":      RatingEl(el: el, data: $data)
+        case "READONLY_FIELD": ReadonlyEl(el: el, data: $data)
+        case "BUTTON":      ButtonEl(el: el, onAction: onAction)
+        default:            Text("Unknown: \(el["type"] ?? "?")").foregroundColor(.red)
+        }
+    }
+
+    @ViewBuilder
+    func contentView(_ content: Any?) -> some View {
+        if let list = content as? [[String: Any]] {
+            ForEach(Array(list.enumerated()), id: \.offset) { _, child in
+                ElementView(el: child, data: $data, onAction: onAction)
+            }
+        }
+    }
+}
+
+// MARK: - Containers
+
+struct RowEl: View { let el: [String: Any]; @Binding var data: [String: Any]
+    var body: some View { HStack(spacing: 0) { ElementView(el: ["content": el["content"] ?? []], data: $data) } }
+}
+
+struct ColEl: View { let el: [String: Any]; @Binding var data: [String: Any]
+    var body: some View { VStack(alignment: .leading) { ElementView(el: ["content": el["content"] ?? []], data: $data) } }
+}
+
+struct FieldsetEl: View { let el: [String: Any]; @Binding var data: [String: Any]
+    var body: some View { GroupBox(label: Text(el["title"] as? String ?? "")) { ElementView(el: ["content": el["content"] ?? []], data: $data) } }
+}
+
+struct GroupEl: View { let el: [String: Any]; @Binding var data: [String: Any]
+    var body: some View { VStack(alignment: .leading, spacing: 4) { ElementView(el: ["content": el["content"] ?? []], data: $data) } }
+}
+
+// MARK: - Display
+
+struct AlertEl: View { let el: [String: Any]
+    var colors: [String: Color] { ["info": .blue, "warning": .yellow, "danger": .red, "success": .green] }
+    var body: some View {
+        Text(el["message"] as? String ?? "")
+            .padding(12).frame(maxWidth: .infinity, alignment: .leading)
+            .background((colors[el["color"] as? String ?? "info"] ?? .blue).opacity(0.15))
+            .cornerRadius(8)
+    }
+}
+
+struct BadgeEl: View { let el: [String: Any]
+    var colors: [String: Color] { ["primary": .blue, "secondary": .gray, "success": .green, "danger": .red] }
+    var body: some View {
+        Text(el["title"] as? String ?? "").font(.caption).bold()
+            .foregroundColor(.white).padding(.horizontal, 8).padding(.vertical, 3)
+            .background((colors[el["color"] as? String ?? "primary"] ?? .blue)).cornerRadius(12)
+    }
+}
+
+struct ProgressEl: View { let el: [String: Any]
+    var body: some View {
+        VStack(alignment: .leading) {
+            if let label = el["label"] as? String { Text(label).font(.caption) }
+            ProgressView(value: Double((el["progress"] as? Int) ?? 0) / 100.0)
+        }
+    }
+}
+
+// MARK: - Inputs
+
+struct InputEl: View { let el: [String: Any]; @Binding var data: [String: Any]
+    var body: some View {
+        TextField(el["label"] as? String ?? "", text: Binding(
+            get: { data[el["id"] as? String ?? ""] as? String ?? "" },
+            set: { data[el["id"] as? String ?? ""] = $0 }
+        )).textFieldStyle(.roundedBorder)
+    }
+}
+
+struct CheckboxEl: View { let el: [String: Any]; @Binding var data: [String: Any]
+    var body: some View {
+        Toggle(el["label"] as? String ?? "", isOn: Binding(
+            get: { data[el["id"] as? String ?? ""] as? Bool ?? false },
+            set: { data[el["id"] as? String ?? ""] = $0 }
+        ))
+    }
+}
+
+struct TextareaEl: View { let el: [String: Any]; @Binding var data: [String: Any]
+    @State private var text: String = ""
+    var body: some View {
+        VStack(alignment: .leading) {
+            if let label = el["label"] as? String { Text(label).font(.body.weight(.medium)) }
+            TextEditor(text: Binding(
+                get: { data[el["id"] as? String ?? ""] as? String ?? text },
+                set: { text = $0; data[el["id"] as? String ?? ""] = $0 }
+            )).frame(minHeight: CGFloat((el["rows"] as? Int ?? 3) * 20)).border(Color.gray.opacity(0.3))
+        }
+    }
+}
+
+struct SelectEl: View { let el: [String: Any]; @Binding var data: [String: Any]
+    var values: [(String, String)] { (el["values"] as? [[String: Any]] ?? []).compactMap { v in
+        guard let id = v["id"] as? (any Hashable), let name = v["displayName"] as? String else { return nil }
+        return ("\(id)", name)
+    }}
+    var body: some View {
+        Picker(el["label"] as? String ?? "", selection: Binding(
+            get: { data[el["id"] as? String ?? ""] as? String ?? "" },
+            set: { data[el["id"] as? String ?? ""] = $0 }
+        )) {
+            Text("").tag("")
+            ForEach(values, id: \.0) { id, name in Text(name).tag(id) }
+        }.pickerStyle(.menu)
+    }
+}
+
+struct RatingEl: View { let el: [String: Any]; @Binding var data: [String: Any]
+    @State private var rating: Int = 0
+    var body: some View {
+        VStack(alignment: .leading) {
+            if let label = el["label"] as? String { Text(label).font(.body.weight(.medium)) }
+            HStack {
+                ForEach(1...5, id: \.self) { n in
+                    Image(systemName: n <= (data[el["id"] as? String ?? ""] as? Int ?? rating) ? "star.fill" : "star")
+                        .foregroundColor(.yellow).onTapGesture {
+                            rating = n; data[el["id"] as? String ?? ""] = n
+                        }
+                }
+            }
+        }
+    }
+}
+
+struct ReadonlyEl: View { let el: [String: Any]; @Binding var data: [String: Any]
+    var body: some View {
+        VStack(alignment: .leading) {
+            if let label = el["label"] as? String { Text(label).font(.body.weight(.medium)) }
+            Text(data[el["id"] as? String ?? ""] as? String ?? "—")
+                .padding(8).frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.gray.opacity(0.1)).cornerRadius(4)
+        }
+    }
+}
+
+// MARK: - Actions
+
+struct ButtonEl: View { let el: [String: Any]; var onAction: ((String, [String: Any]?) -> Void)?
+    var colors: [String: Color] { ["primary": .blue, "secondary": .gray, "success": .green, "danger": .red] }
+    var body: some View {
+        Button(el["title"] as? String ?? el["id"] as? String ?? "") {
+            onAction?(el["id"] as? String ?? "", el["responseAction"] as? [String: Any])
+        }.buttonStyle(.borderedProminent).tint(colors[el["color"] as? String ?? "primary"] ?? .blue)
+    }
+}
