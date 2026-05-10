@@ -1,224 +1,72 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://dynamiclayout.org/schemas/ui-layout.schema.json",
-  "title": "DynamicLayout UILayout",
-  "description": "JSON Schema for DynamicLayout Server-Driven UI format. Server generates this JSON, React DynamicRenderer consumes it.",
+  "$id": "https://github.com/MaurerAnton/projectforge-dynamiclayout/blob/master/dynamiclayout-schema.json",
+  "title": "DynamicLayout UI Schema",
+  "description": "JSON Schema for the ProjectForge DynamicLayout format. Defines the structure of server-generated UI layouts consumed by the React DynamicRenderer.",
   "type": "object",
   "required": ["ui"],
   "properties": {
     "data": {
-      "description": "Entity data (any JSON object or null for static pages)",
-      "type": ["object", "null"]
+      "description": "Entity data object. Key-value pairs where keys are field IDs. Sent alongside ui for edit pages.",
+      "type": "object"
     },
-    "ui": {
-      "type": "object",
-      "required": ["title", "layout", "uid", "translations", "userAccess"],
-      "properties": {
-        "title": {
-          "type": "string",
-          "description": "Page title (i18n key or literal prefixed with ')"
-        },
-        "uid": {
-          "type": "string",
-          "description": "Unique layout ID",
-          "pattern": "^layout\\d+$"
-        },
-        "layout": {
-          "type": "array",
-          "description": "Main layout elements tree",
-          "items": { "$ref": "#/$defs/UIElement" }
-        },
-        "actions": {
-          "type": "array",
-          "description": "Action buttons rendered at the bottom",
-          "items": { "$ref": "#/$defs/UIElement" }
-        },
-        "layoutBelowActions": {
-          "type": "array",
-          "description": "Elements rendered below action buttons",
-          "items": { "$ref": "#/$defs/UIElement" }
-        },
-        "pageMenu": {
-          "type": "array",
-          "description": "Page menu items",
-          "items": { "$ref": "#/$defs/PageMenuItem" }
-        },
-        "namedContainers": {
-          "type": "array",
-          "items": { "$ref": "#/$defs/NamedContainer" }
-        },
-        "translations": {
-          "type": "object",
-          "description": "i18n translation map (key → translated string)",
-          "additionalProperties": { "type": "string" }
-        },
-        "userAccess": { "$ref": "#/$defs/UserAccess" },
-        "showHistory": { "type": "boolean" },
-        "hideSearchFilter": { "type": "boolean" },
-        "excelExportSupported": { "type": "boolean" },
-        "multiSelectionSupported": { "type": "boolean" },
-        "watchFields": {
-          "type": "array",
-          "items": { "type": "string" },
-          "description": "Field IDs that trigger re-fetch on change"
-        },
-        "historyBackButton": { "type": ["string", "null"] },
-        "restBaseUrl": { "type": ["string", "null"] }
-      }
-    },
+    "ui": { "$ref": "#/$defs/UILayout" },
     "serverData": {
-      "type": "object",
-      "properties": {
-        "i18n": {
-          "type": "object",
-          "properties": {
-            "locale": { "type": "string" }
-          }
-        }
-      }
+      "description": "Arbitrary server data passed to the client (e.g. configuration, metadata).",
+      "type": "object"
     },
     "variables": {
-      "type": ["object", "null"],
-      "description": "Arbitrary variables passed between actions"
+      "description": "Client-side variables for state management (e.g. selected tab, expanded section).",
+      "type": "object"
     }
   },
   "$defs": {
-    "UIElement": {
+    "UILayout": {
+      "description": "Root UI object. Contains the page layout, actions, translations, and access control.",
       "type": "object",
-      "required": ["type", "key"],
+      "required": ["title", "uid", "layout"],
       "properties": {
-        "type": {
-          "type": "string",
-          "description": "Element type discriminator. Determines which React component renders this element.",
-          "enum": [
-            "AG_GRID", "AG_GRID_LIST_PAGE", "ALERT", "ATTACHMENT_LIST",
-            "BADGE", "BADGE_LIST", "BUTTON", "CHECKBOX", "COL",
-            "CREATABLE_SELECT", "CUSTOMIZED", "DROP_AREA", "EDITOR",
-            "FIELDSET", "FRAGMENT", "GROUP", "INLINE_GROUP", "INPUT",
-            "LABEL", "LIST", "NAMED_CONTAINER", "PROGRESS", "RADIOBUTTON",
-            "RATING", "READONLY_FIELD", "ROW", "SELECT", "SPACER",
-            "TABLE", "TABLE_LIST_PAGE", "TEXTAREA"
-          ]
-        },
-        "key": {
-          "type": "string",
-          "description": "Unique element key for React list rendering",
-          "pattern": "^(el-|nc-)\\d+$"
-        },
-        "cssClass": { "type": "string", "description": "Additional CSS class" }
-      },
-      "allOf": [
-        { "$ref": "#/$defs/ContainerFields" },
-        { "$ref": "#/$defs/FieldFields" },
-        { "$ref": "#/$defs/DisplayFields" },
-        { "$ref": "#/$defs/ButtonFields" },
-        { "$ref": "#/$defs/TableFields" }
-      ]
-    },
-
-    "ContainerFields": {
-      "if": {
-        "properties": { "type": { "enum": ["ROW", "COL", "GROUP", "FRAGMENT", "INLINE_GROUP", "FIELDSET", "NAMED_CONTAINER", "LIST"] } }
-      },
-      "then": {
-        "properties": {
-          "content": {
-            "type": "array",
-            "description": "Child elements",
-            "items": { "$ref": "#/$defs/UIElement" }
-          },
-          "length": { "$ref": "#/$defs/UILength" },
-          "offset": { "$ref": "#/$defs/UILength" },
-          "collapseTitle": { "type": "string" }
-        }
+        "title": { "type": "string", "description": "Page title. i18n key or 'literal text." },
+        "uid": { "type": "string", "description": "Unique layout identifier (e.g. 'layout1234567890'). Used for staleness detection." },
+        "layout": { "type": "array", "items": { "$ref": "#/$defs/UIElement" }, "description": "Main page content." },
+        "actions": { "type": "array", "items": { "$ref": "#/$defs/UIButton" }, "description": "Action buttons (Save, Cancel, Delete)." },
+        "layoutBelowActions": { "type": "array", "items": { "$ref": "#/$defs/UIElement" }, "description": "Content rendered below the action buttons." },
+        "pageMenu": { "$ref": "#/$defs/UIPageMenu" },
+        "namedContainers": { "type": "array", "items": { "$ref": "#/$defs/UINamedContainer" }, "description": "Named containers for filters and additional sections." },
+        "translations": { "type": "object", "additionalProperties": { "type": "string" }, "description": "Flat i18n key→translated-value map." },
+        "userAccess": { "$ref": "#/$defs/UserAccess" },
+        "showHistory": { "type": "boolean", "description": "Show history sidebar." },
+        "watchFields": { "type": "array", "items": { "type": "string" }, "description": "Field IDs that trigger server round-trip on change." }
       }
     },
-
-    "FieldFields": {
-      "if": {
-        "properties": { "type": { "enum": ["INPUT", "TEXTAREA", "CHECKBOX", "SELECT", "CREATABLE_SELECT", "RADIOBUTTON", "RATING", "READONLY_FIELD"] } }
-      },
-      "then": {
-        "properties": {
-          "id": { "type": "string" },
-          "label": { "type": "string" },
-          "dataType": {
-            "type": "string",
-            "enum": ["STRING", "DATE", "TIMESTAMP", "TIME", "INT", "LONG", "DECIMAL", "NUMBER", "AMOUNT", "BOOLEAN", "PASSWORD", "USER", "GROUP", "EMPLOYEE", "TASK", "COST1", "COST2", "KONTO", "LOCALE", "TIMEZONE", "PICTURE", "CUSTOMIZED"]
-          },
-          "required": { "type": "boolean" },
-          "maxLength": { "type": "integer" },
-          "focus": { "type": "boolean" },
-          "tooltip": { "type": "string" },
-          "additionalLabel": { "type": "string" }
-        },
-        "required": ["id"]
-      }
-    },
-
-    "DisplayFields": {
-      "if": {
-        "properties": { "type": { "enum": ["LABEL", "ALERT", "BADGE", "BADGE_LIST", "SPACER", "PROGRESS"] } }
-      },
-      "then": {
-        "properties": {
-          "title": { "type": "string" },
-          "color": { "type": "string" },
-          "icon": {
-            "type": "array",
-            "items": { "type": "string" },
-            "minItems": 2,
-            "maxItems": 2
-          }
-        }
-      }
-    },
-
-    "ButtonFields": {
-      "if": {
-        "properties": { "type": { "const": "BUTTON" } }
-      },
-      "then": {
-        "properties": {
-          "id": { "type": "string" },
-          "title": { "type": "string" },
-          "color": { "type": "string" },
-          "outline": { "type": "boolean" },
-          "default": { "type": "boolean" },
-          "disabled": { "type": "boolean" },
-          "confirmMessage": { "type": "string" },
-          "responseAction": { "$ref": "#/$defs/ResponseAction" }
-        }
-      }
-    },
-
-    "TableFields": {
-      "if": {
-        "properties": { "type": { "enum": ["TABLE", "TABLE_LIST_PAGE"] } }
-      },
-      "then": {
-        "properties": {
-          "columns": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": { "type": "string" },
-                "title": { "type": "string" },
-                "dataType": { "type": "string" },
-                "sortable": { "type": "boolean" },
-                "formatter": { "type": "string" }
-              },
-              "required": ["id"]
-            }
-          }
-        }
-      }
-    },
-
-    "UILength": {
+    "UserAccess": {
       "type": "object",
-      "description": "Bootstrap grid column size (1-12 for each breakpoint)",
+      "properties": {
+        "insert": { "type": "boolean" },
+        "update": { "type": "boolean" },
+        "delete": { "type": "boolean" },
+        "cancel": { "type": "boolean" }
+      }
+    },
+    "UIPageMenu": {
+      "description": "Page-level menu (list page actions: export, filter, etc.).",
+      "type": "object",
+      "properties": {
+        "type": { "const": "PAGE_MENU" },
+        "key": { "type": "string" },
+        "items": { "type": "array", "items": { "$ref": "#/$defs/UIPageMenuItem" } }
+      }
+    },
+    "UIPageMenuItem": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "label": { "type": "string" }
+      }
+    },
+    "UILength": {
+      "description": "Bootstrap grid column width (1-12) per breakpoint.",
+      "type": "object",
       "properties": {
         "xs": { "type": "integer", "minimum": 1, "maximum": 12 },
         "sm": { "type": "integer", "minimum": 1, "maximum": 12 },
@@ -227,62 +75,614 @@
         "xl": { "type": "integer", "minimum": 1, "maximum": 12 }
       }
     },
+    "UIColor": {
+      "description": "Bootstrap color variant.",
+      "enum": ["primary", "secondary", "success", "danger", "warning", "info", "light", "dark", "link"]
+    },
+    "AudioVideoType": {
+      "description": "Audio/video URL format.",
+      "enum": ["URL", "EMBEDDED"]
+    },
+    "AutoCompleteType": {
+      "enum": ["USERNAME", "CURRENT_PASSWORD", "NEW_PASSWORD", "OFF", "ONE_TIME_CODE"]
+    },
+    "InputMode": {
+      "enum": ["NUMERIC"]
+    },
+    "UIDataType": {
+      "description": "Data type of an INPUT element. Determines the rendered input widget.",
+      "enum": ["STRING", "INTEGER", "LONG", "BIG_DECIMAL", "STRING_ARRAY", "DATE", "TIME", "TIMESTAMP", "BOOLEAN", "PASSWORD", "AUTO_COMPLETION", "USER", "TASK", "GROUP", "EMPLOYEE", "KOST2_ART", "AUFTRAG", "PROJEKT"]
+    },
+    "UIElement": {
+      "description": "Base UI element. Every element has at least type and key. The actual shape depends on type via oneOf.",
+      "oneOf": [
+        { "$ref": "#/$defs/UIRow" },
+        { "$ref": "#/$defs/UICol" },
+        { "$ref": "#/$defs/UIFieldset" },
+        { "$ref": "#/$defs/UIGroup" },
+        { "$ref": "#/$defs/UIInlineGroup" },
+        { "$ref": "#/$defs/UINamedContainer" },
+        { "$ref": "#/$defs/UILabel" },
+        { "$ref": "#/$defs/UIInput" },
+        { "$ref": "#/$defs/UITextArea" },
+        { "$ref": "#/$defs/UICheckbox" },
+        { "$ref": "#/$defs/UISelect" },
+        { "$ref": "#/$defs/UICreatableSelect" },
+        { "$ref": "#/$defs/UIRadioButton" },
+        { "$ref": "#/$defs/UIRating" },
+        { "$ref": "#/$defs/UIReadOnlyField" },
+        { "$ref": "#/$defs/UIButton" },
+        { "$ref": "#/$defs/UIAlert" },
+        { "$ref": "#/$defs/UIBadge" },
+        { "$ref": "#/$defs/UIBadgeList" },
+        { "$ref": "#/$defs/UIProgress" },
+        { "$ref": "#/$defs/UISpacer" },
+        { "$ref": "#/$defs/UIEditor" },
+        { "$ref": "#/$defs/UIList" },
+        { "$ref": "#/$defs/UITable" },
+        { "$ref": "#/$defs/UITableColumn" },
+        { "$ref": "#/$defs/UIAgGrid" },
+        { "$ref": "#/$defs/UIAgGridListPage" },
+        { "$ref": "#/$defs/UIAgGridColumnDef" },
+        { "$ref": "#/$defs/UIAttachmentList" },
+        { "$ref": "#/$defs/UIDropArea" },
+        { "$ref": "#/$defs/UICustomized" },
+        { "$ref": "#/$defs/UIFilterElement" },
+        { "$ref": "#/$defs/UIFragment" }
+      ]
+    },
 
-    "NamedContainer": {
+    "UIRow": {
+      "description": "Horizontal row container (Bootstrap Row).",
       "type": "object",
-      "required": ["type", "key", "id", "content"],
+      "required": ["type", "key"],
+      "properties": {
+        "type": { "const": "ROW" },
+        "key": { "type": "string" },
+        "content": { "type": "array", "items": { "$ref": "#/$defs/UIElement" } }
+      }
+    },
+    "UICol": {
+      "description": "Grid column (Bootstrap Col). Nested inside ROW.",
+      "type": "object",
+      "required": ["type", "key"],
+      "properties": {
+        "type": { "const": "COL" },
+        "key": { "type": "string" },
+        "length": { "$ref": "#/$defs/UILength" },
+        "offset": { "$ref": "#/$defs/UILength" },
+        "collapseTitle": { "type": "string", "description": "Optional: makes column collapsible with this title." },
+        "content": { "type": "array", "items": { "$ref": "#/$defs/UIElement" } }
+      }
+    },
+    "UIFieldset": {
+      "description": "Fieldset container with legend. Extends COL — supports Bootstrap grid, collapsing.",
+      "type": "object",
+      "required": ["type", "key"],
+      "properties": {
+        "type": { "const": "FIELDSET" },
+        "key": { "type": "string" },
+        "title": { "type": "string", "description": "Legend text. i18n-translated." },
+        "collapsed": { "type": ["boolean", "null"], "description": "null=not collapsible, true=collapsed, false=expanded." },
+        "length": { "$ref": "#/$defs/UILength" },
+        "offset": { "$ref": "#/$defs/UILength" },
+        "content": { "type": "array", "items": { "$ref": "#/$defs/UIElement" } }
+      }
+    },
+    "UIGroup": {
+      "description": "Element group (FormGroup row). Typically wraps Label+Input pair.",
+      "type": "object",
+      "required": ["type", "key"],
+      "properties": {
+        "type": { "const": "GROUP" },
+        "key": { "type": "string" },
+        "content": { "type": "array", "items": { "$ref": "#/$defs/UIElement" } }
+      }
+    },
+    "UIInlineGroup": {
+      "description": "Inline flex container. Children arranged side-by-side without wrapping.",
+      "type": "object",
+      "required": ["type", "key"],
+      "properties": {
+        "type": { "const": "INLINE_GROUP" },
+        "key": { "type": "string" },
+        "content": { "type": "array", "items": { "$ref": "#/$defs/UIElement" } }
+      }
+    },
+    "UIFragment": {
+      "description": "Fragment container (React.Fragment). No DOM wrapper.",
+      "type": "object",
+      "required": ["type", "key"],
+      "properties": {
+        "type": { "const": "FRAGMENT" },
+        "key": { "type": "string" },
+        "content": { "type": "array", "items": { "$ref": "#/$defs/UIElement" } }
+      }
+    },
+    "UINamedContainer": {
+      "description": "Named container accessible by id. Used for filters and additional layout sections.",
+      "type": "object",
+      "required": ["type", "key", "id"],
       "properties": {
         "type": { "const": "NAMED_CONTAINER" },
-        "key": { "type": "string", "pattern": "^nc-\\d+$" },
-        "id": { "type": "string" },
-        "content": {
-          "type": "array",
-          "items": { "$ref": "#/$defs/UIElement" }
-        }
+        "key": { "type": "string" },
+        "id": { "type": "string", "description": "Named container identifier (e.g. 'filterSettings')." },
+        "content": { "type": "array", "items": { "$ref": "#/$defs/UIElement" } }
       }
     },
 
-    "PageMenuItem": {
+    "UILabel": {
+      "description": "Text label. Displays static or i18n-translated text.",
       "type": "object",
+      "required": ["type", "key", "label"],
       "properties": {
+        "type": { "const": "LABEL" },
+        "key": { "type": "string" },
+        "label": { "type": "string", "description": "Label text. i18n key or 'literal text." },
+        "tooltip": { "type": "string" }
+      }
+    },
+    "UIInput": {
+      "description": "Input field. Widget determined by dataType (DynamicInputResolver).",
+      "type": "object",
+      "required": ["type", "key", "id"],
+      "properties": {
+        "type": { "const": "INPUT" },
+        "key": { "type": "string" },
+        "id": { "type": "string", "description": "Data binding key: data[id]." },
+        "dataType": { "$ref": "#/$defs/UIDataType", "description": "Determines rendered widget (default: STRING)." },
+        "label": { "type": "string", "description": "Field label. i18n-translated." },
+        "required": { "type": "boolean" },
+        "maxLength": { "type": "integer" },
+        "focus": { "type": "boolean", "description": "Auto-focus this field on page load." },
+        "color": { "$ref": "#/$defs/UIColor" },
+        "autoComplete": { "$ref": "#/$defs/AutoCompleteType" },
+        "inputMode": { "$ref": "#/$defs/InputMode" },
+        "pattern": { "type": "string", "description": "HTML pattern attribute for client-side validation." },
+        "autoCompletionUrl": { "type": "string", "description": "URL for auto-completion suggestions." },
+        "autoCompletionUrlParams": { "type": "object", "description": "Additional URL parameters for auto-completion." },
+        "additionalLabel": { "type": "string" },
+        "tooltip": { "type": "string" }
+      }
+    },
+    "UITextArea": {
+      "description": "Multi-line text input.",
+      "type": "object",
+      "required": ["type", "key", "id"],
+      "properties": {
+        "type": { "const": "TEXTAREA" },
+        "key": { "type": "string" },
         "id": { "type": "string" },
         "label": { "type": "string" },
-        "url": { "type": "string" }
+        "required": { "type": "boolean" },
+        "maxLength": { "type": "integer" },
+        "rows": { "type": "integer", "description": "Number of visible rows (default: 3)." },
+        "color": { "$ref": "#/$defs/UIColor" },
+        "additionalLabel": { "type": "string" }
       }
     },
-
-    "UserAccess": {
+    "UICheckbox": {
+      "description": "Boolean checkbox.",
       "type": "object",
-      "description": "User permissions for the current page. Determines which action buttons are shown.",
+      "required": ["type", "key", "id"],
       "properties": {
-        "history": { "type": "boolean" },
-        "insert": { "type": "boolean" },
-        "update": { "type": "boolean" },
-        "delete": { "type": "boolean" },
-        "cancel": { "type": "boolean" },
-        "editHistoryComments": { "type": "boolean" }
+        "type": { "const": "CHECKBOX" },
+        "key": { "type": "string" },
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "additionalLabel": { "type": "string" }
       }
     },
-
-    "ResponseAction": {
+    "UISelect": {
+      "description": "Dropdown select (react-select).",
       "type": "object",
-      "description": "Action to execute on the client after a button press",
+      "required": ["type", "key", "id"],
       "properties": {
-        "url": { "type": "string" },
-        "targetType": {
-          "type": "string",
-          "enum": ["REDIRECT", "DOWNLOAD", "UPDATE", "GET", "PUT", "POST", "DELETE", "MODAL", "CLOSE_MODAL", "RELOAD", "NOTHING", "TOAST", "CHECK_AUTHENTICATION"]
+        "type": { "const": "SELECT" },
+        "key": { "type": "string" },
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "required": { "type": "boolean" },
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "displayName"],
+            "properties": {
+              "id": { "type": ["string", "integer"] },
+              "displayName": { "type": "string" },
+              "order": { "type": "integer" }
+            }
+          }
         },
-        "merge": { "type": "boolean" },
-        "message": {
-          "type": "object",
-          "properties": {
-            "i18nKey": { "type": "string" },
-            "message": { "type": "string" },
-            "technicalMessage": { "type": "string" },
-            "color": { "type": "string" }
+        "favorites": { "type": "boolean", "description": "Show favorites functionality." },
+        "objectSelectType": { "type": "string", "description": "Object select type (USER, TASK, GROUP, etc.)." },
+        "color": { "$ref": "#/$defs/UIColor" },
+        "additionalLabel": { "type": "string" }
+      }
+    },
+    "UICreatableSelect": {
+      "description": "Select dropdown with 'create new' option (Creatable react-select).",
+      "type": "object",
+      "required": ["type", "key", "id"],
+      "properties": {
+        "type": { "const": "CREATABLE_SELECT" },
+        "key": { "type": "string" },
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "required": { "type": "boolean" },
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "displayName"],
+            "properties": {
+              "id": { "type": ["string", "integer"] },
+              "displayName": { "type": "string" }
+            }
+          }
+        },
+        "additionalLabel": { "type": "string" }
+      }
+    },
+    "UIRadioButton": {
+      "description": "Radio button group.",
+      "type": "object",
+      "required": ["type", "key", "id"],
+      "properties": {
+        "type": { "const": "RADIOBUTTON" },
+        "key": { "type": "string" },
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "required": { "type": "boolean" },
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "displayName"],
+            "properties": {
+              "id": { "type": ["string", "integer"] },
+              "displayName": { "type": "string" }
+            }
+          }
+        },
+        "additionalLabel": { "type": "string" },
+        "disabled": { "type": "boolean" }
+      }
+    },
+    "UIRating": {
+      "description": "Star rating input (1-5 stars).",
+      "type": "object",
+      "required": ["type", "key", "id"],
+      "properties": {
+        "type": { "const": "RATING" },
+        "key": { "type": "string" },
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "additionalLabel": { "type": "string" }
+      }
+    },
+    "UIReadOnlyField": {
+      "description": "Read-only display field. Shows data value without input.",
+      "type": "object",
+      "required": ["type", "key", "id"],
+      "properties": {
+        "type": { "const": "READONLY_FIELD" },
+        "key": { "type": "string" },
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "dataType": { "$ref": "#/$defs/UIDataType" },
+        "additionalLabel": { "type": "string" },
+        "audioVideoType": { "$ref": "#/$defs/AudioVideoType" }
+      }
+    },
+
+    "UIButton": {
+      "description": "Action button. Can appear in layout[] or actions[].",
+      "type": "object",
+      "required": ["type", "key", "id"],
+      "properties": {
+        "type": { "const": "BUTTON" },
+        "key": { "type": "string" },
+        "id": { "type": "string", "description": "Action identifier." },
+        "title": { "type": "string", "description": "Button text. i18n-translated." },
+        "label": { "type": "string", "description": "Alternative to title." },
+        "color": { "$ref": "#/$defs/UIColor" },
+        "icon": { "type": "string", "description": "FontAwesome icon name." },
+        "default": { "type": "boolean", "description": "Default action (primary styling, Enter key)." },
+        "tooltip": { "type": "string" },
+        "responseAction": { "$ref": "#/$defs/ResponseAction" },
+        "cssClass": { "type": "string" },
+        "disabled": { "type": "boolean" }
+      }
+    },
+    "ResponseAction": {
+      "description": "Server-defined action to execute after button click.",
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "enum": ["SAVE", "UPDATE", "DELETE", "CUSTOM", "REDIRECT", "RELOAD"], "description": "Action type." },
+        "url": { "type": "string", "description": "Target URL (for SAVE, UPDATE, DELETE)." },
+        "method": { "enum": ["GET", "POST", "PUT", "DELETE", "PATCH"] },
+        "targetType": { "enum": ["UPDATE_DATA", "REDIRECT", "TOAST", "MODAL", "RELOAD", "CUSTOM"], "description": "Client behavior after server response." },
+        "targetUrl": { "type": "string", "description": "URL for REDIRECT targetType." },
+        "message": { "type": "string", "description": "Message for TOAST targetType." },
+        "color": { "$ref": "#/$defs/UIColor", "description": "Color for TOAST." },
+        "noResponseAction": { "type": "boolean" },
+        "confirmMessage": { "type": "string" }
+      }
+    },
+    "UIAlert": {
+      "description": "Alert notification banner.",
+      "type": "object",
+      "required": ["type", "key"],
+      "properties": {
+        "type": { "const": "ALERT" },
+        "key": { "type": "string" },
+        "message": { "type": "string", "description": "Alert text. i18n-translated." },
+        "color": { "$ref": "#/$defs/UIColor" }
+      }
+    },
+    "UIBadge": {
+      "description": "Badge/chip.",
+      "type": "object",
+      "required": ["type", "key"],
+      "properties": {
+        "type": { "const": "BADGE" },
+        "key": { "type": "string" },
+        "title": { "type": "string" },
+        "color": { "$ref": "#/$defs/UIColor" },
+        "pill": { "type": "boolean", "description": "Pill shape (rounded)." },
+        "icon": { "type": "string" }
+      }
+    },
+    "UIBadgeList": {
+      "description": "Horizontal list of badges.",
+      "type": "object",
+      "required": ["type", "key"],
+      "properties": {
+        "type": { "const": "BADGE_LIST" },
+        "key": { "type": "string" },
+        "badgeList": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["title"],
+            "properties": {
+              "title": { "type": "string" },
+              "color": { "$ref": "#/$defs/UIColor" },
+              "pill": { "type": "boolean" }
+            }
           }
         }
+      }
+    },
+    "UIProgress": {
+      "description": "Progress bar.",
+      "type": "object",
+      "required": ["type", "key"],
+      "properties": {
+        "type": { "const": "PROGRESS" },
+        "key": { "type": "string" },
+        "label": { "type": "string" },
+        "progress": { "type": "integer", "minimum": 0, "maximum": 100, "description": "Progress percentage 0-100." },
+        "color": { "$ref": "#/$defs/UIColor" }
+      }
+    },
+    "UISpacer": {
+      "description": "Vertical spacer.",
+      "type": "object",
+      "required": ["type", "key"],
+      "properties": {
+        "type": { "const": "SPACER" },
+        "key": { "type": "string" },
+        "width": { "type": "integer", "description": "Spacer height in px." }
+      }
+    },
+    "UIEditor": {
+      "description": "Code editor (Ace).",
+      "type": "object",
+      "required": ["type", "key", "id"],
+      "properties": {
+        "type": { "const": "EDITOR" },
+        "key": { "type": "string" },
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "rows": { "type": "integer", "description": "Editor height in rows." }
+      }
+    },
+    "UIList": {
+      "description": "Repeatable list. Each item gets an independent data scope.",
+      "type": "object",
+      "required": ["type", "key", "listId", "elementVar"],
+      "properties": {
+        "type": { "const": "LIST" },
+        "key": { "type": "string" },
+        "listId": { "type": "string", "description": "Path in data object." },
+        "elementVar": { "type": "string", "description": "Variable name for each list element." },
+        "positionLabel": { "type": "string" },
+        "content": { "type": "array", "items": { "$ref": "#/$defs/UIElement" }, "description": "Template for each repeatable item." }
+      }
+    },
+
+    "UITable": {
+      "description": "Basic HTML table.",
+      "type": "object",
+      "required": ["type", "key"],
+      "properties": {
+        "type": { "const": "TABLE" },
+        "key": { "type": "string" },
+        "id": { "type": "string" },
+        "columns": { "type": "array", "items": { "$ref": "#/$defs/UITableColumn" } },
+        "content": { "type": "array", "items": { "$ref": "#/$defs/UIElement" }, "description": "Row template or table body." }
+      }
+    },
+    "UITableColumn": {
+      "description": "Table column definition.",
+      "type": "object",
+      "required": ["type", "key", "id"],
+      "properties": {
+        "type": { "const": "TABLE_COLUMN" },
+        "key": { "type": "string" },
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "dataType": { "$ref": "#/$defs/UIDataType" },
+        "order": { "type": "integer" }
+      }
+    },
+
+    "UIAgGrid": {
+      "description": "AgGrid enterprise table. Full-featured with sorting, filtering, pagination.",
+      "type": "object",
+      "required": ["type", "key"],
+      "properties": {
+        "type": { "const": "AG_GRID" },
+        "key": { "type": "string" },
+        "id": { "type": "string", "description": "Table identifier." },
+        "columnDefs": { "type": "array", "items": { "$ref": "#/$defs/UIAgGridColumnDef" } },
+        "suppressColumnSeparator": { "type": "boolean" },
+        "suppressSearch": { "type": "boolean" },
+        "suppressExcelExport": { "type": "boolean" },
+        "translationParameter": { "type": "string" }
+      }
+    },
+    "UIAgGridListPage": {
+      "description": "AgGrid for list pages. Extends AG_GRID with row navigation and mass operations.",
+      "type": "object",
+      "required": ["type", "key"],
+      "properties": {
+        "type": { "const": "AG_GRID_LIST_PAGE" },
+        "key": { "type": "string" },
+        "id": { "type": "string" },
+        "columnDefs": { "type": "array", "items": { "$ref": "#/$defs/UIAgGridColumnDef" } },
+        "suppressColumnSeparator": { "type": "boolean" },
+        "suppressSearch": { "type": "boolean" },
+        "suppressExcelExport": { "type": "boolean" },
+        "translationParameter": { "type": "string" },
+        "rowNavigationUrl": { "type": "string" }
+      }
+    },
+    "UIAgGridColumnDef": {
+      "description": "AgGrid column definition. Nested inside AG_GRID/AG_GRID_LIST_PAGE.",
+      "type": "object",
+      "required": ["type", "key", "id"],
+      "properties": {
+        "type": { "const": "AG_GRID_COLUMN_DEF" },
+        "key": { "type": "string" },
+        "id": { "type": "string" },
+        "headerName": { "type": "string", "description": "Column header. i18n-translated." },
+        "dataType": { "$ref": "#/$defs/UIDataType" },
+        "filter": { "enum": ["TEXT", "NUMBER", "DATE", "SET"], "description": "Filter type." },
+        "sort": { "type": "string", "description": "Default sort direction: asc/desc." },
+        "sortOrder": { "type": "integer", "description": "Column position in sort order." },
+        "width": { "type": "integer" },
+        "minWidth": { "type": "integer" },
+        "maxWidth": { "type": "integer" },
+        "cellRenderer": { "type": "string", "description": "Custom cell renderer: multiline, diff, importStatus, customized." },
+        "hide": { "type": "boolean" },
+        "sortable": { "type": "boolean" },
+        "suppressColumnsSelectPanel": { "type": "boolean" },
+        "filterValues": { "type": "array", "items": { "type": "string" } },
+        "tooltipField": { "type": "string" },
+        "pinned": { "enum": ["left", "right"] },
+        "filterList": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": ["string", "integer"] },
+              "displayName": { "type": "string" }
+            }
+          }
+        },
+        "translationKey": { "type": "string" }
+      }
+    },
+
+    "UIAttachmentList": {
+      "description": "File attachment list with upload, download, preview.",
+      "type": "object",
+      "required": ["type", "key"],
+      "properties": {
+        "type": { "const": "ATTACHMENT_LIST" },
+        "key": { "type": "string" },
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": ["string", "integer"] },
+              "filename": { "type": "string" },
+              "size": { "type": "integer" },
+              "contentType": { "type": "string" }
+            }
+          }
+        },
+        "maxFileSize": { "type": "integer" }
+      }
+    },
+    "UIDropArea": {
+      "description": "File drop zone for upload.",
+      "type": "object",
+      "required": ["type", "key"],
+      "properties": {
+        "type": { "const": "DROP_AREA" },
+        "key": { "type": "string" },
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "accept": { "type": "string", "description": "Accepted MIME types (e.g. 'image/*')." },
+        "multiple": { "type": "boolean" },
+        "maxFileSize": { "type": "integer" }
+      }
+    },
+    "UICustomized": {
+      "description": "Custom domain-specific component. Dispatched by id on the client.",
+      "type": "object",
+      "required": ["type", "key", "id"],
+      "properties": {
+        "type": { "const": "CUSTOMIZED" },
+        "key": { "type": "string" },
+        "id": { "type": "string", "description": "Component identifier (28 domain-specific sub-types)." },
+        "label": { "type": "string" },
+        "additionalLabel": { "type": "string" },
+        "required": { "type": "boolean" },
+        "dataType": { "$ref": "#/$defs/UIDataType" },
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": ["string", "integer"] },
+              "displayName": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "UIFilterElement": {
+      "description": "Filter element for list page filters.",
+      "type": "object",
+      "required": ["type", "key", "id"],
+      "properties": {
+        "type": { "const": "FILTER_ELEMENT" },
+        "key": { "type": "string" },
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "dataType": { "$ref": "#/$defs/UIDataType" },
+        "required": { "type": "boolean" },
+        "values": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": ["string", "integer"] },
+              "displayName": { "type": "string" }
+            }
+          }
+        },
+        "filterType": { "enum": ["TEXT", "NUMBER", "DATE", "SELECT", "BOOLEAN", "TIMESTAMP"] }
       }
     }
   }
