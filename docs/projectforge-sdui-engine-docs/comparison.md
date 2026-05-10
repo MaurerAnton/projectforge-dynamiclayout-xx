@@ -2,7 +2,7 @@
 
 ## Summary Table
 
-| Aspect | ProjectForge | RJSF | Formily | AdminJS | Apache Causeway | DivKit |
+| Aspect | PFDL (DynamicLayout) | RJSF | Formily | AdminJS | Apache Causeway | DivKit |
 |--------|-------------|------|---------|---------|-----------------|--------|
 | **GitHub stars** | — | [~15 800](https://github.com/rjsf-team/react-jsonschema-form) | [~12 500](https://github.com/alibaba/formily) | [~8 900](https://github.com/SoftwareBrothers/adminjs) | [~890](https://github.com/apache/causeway) | [~2 600](https://github.com/divkit/divkit) |
 | **Type** | Server framework | Client library | Client library | Server framework | Server framework | Client renderer |
