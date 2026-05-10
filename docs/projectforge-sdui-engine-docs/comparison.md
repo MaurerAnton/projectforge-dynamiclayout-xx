@@ -6,10 +6,10 @@
 |--------|-------------|------|---------|---------|-----------------|--------|
 | **GitHub stars** | — | [~15 800](https://github.com/rjsf-team/react-jsonschema-form) | [~12 500](https://github.com/alibaba/formily) | [~8 900](https://github.com/SoftwareBrothers/adminjs) | [~890](https://github.com/apache/causeway) | [~2 600](https://github.com/divkit/divkit) |
 | **Type** | [Server framework](architecture.md) | [Client library](https://rjsf-team.github.io/react-jsonschema-form/docs/) | [Client library](https://formilyjs.org/) | [Server framework](https://docs.adminjs.co/) | [Server framework](https://causeway.apache.org/docs/) | [Client renderer](https://divkit.tech/doc) |
-| **Server language** | [Kotlin/Java](architecture.md) | [Any](https://rjsf-team.github.io/react-jsonschema-form/docs/#introduction) | [Any](https://formilyjs.org/) | [Node.js/TypeScript](https://docs.adminjs.co/installation/getting-started) | [Java](https://causeway.apache.org/docs/latest/starters/simpleapp/) | [Any](https://divkit.tech/doc#for-server-developer) |
+| **Server language** | [Kotlin, C, JS](architecture.md) | [Any](https://rjsf-team.github.io/react-jsonschema-form/docs/#introduction) | [Any](https://formilyjs.org/) | [Node.js/TypeScript](https://docs.adminjs.co/installation/getting-started) | [Java](https://causeway.apache.org/docs/latest/starters/simpleapp/) | [Any](https://divkit.tech/doc#for-server-developer) |
 | **Client language** | [React](https://github.com/MaurerAnton/projectforge-dynamiclayout/tree/master/projectforge-webapp) | [React](https://github.com/rjsf-team/react-jsonschema-form) | [React/Vue](https://formilyjs.org/guide/quick-start) | [React](https://github.com/SoftwareBrothers/adminjs/tree/master/src/frontend) | [Wicket](https://causeway.apache.org/docs/latest/viewers/wicket/about/) | [Native + Web](https://github.com/divkit/divkit) |
 | **Full SDUI** | [✅ Yes](architecture.md) | ❌ Forms only | ❌ Forms only | ⚠️ CRUD | [✅ Yes](https://causeway.apache.org/) | [✅ Yes](https://divkit.tech/) |
-| **UI generation** | [Explicit (Kotlin DSL)](pipeline.md) | [From JSON Schema](https://rjsf-team.github.io/react-jsonschema-form/docs/usage/schema) | [From JSON Schema](https://formilyjs.org/guide/learn-formily) | [From metadata](https://docs.adminjs.co/basics/resource) | [Reflection (auto)](https://causeway.apache.org/docs/latest/core/overview/) | [From DivJson](https://divkit.tech/schema) |
+| **UI generation** | [Explicit (Kotlin/C/JS DSL)](architecture.md) | [From JSON Schema](https://rjsf-team.github.io/react-jsonschema-form/docs/usage/schema) | [From JSON Schema](https://formilyjs.org/guide/learn-formily) | [From metadata](https://docs.adminjs.co/basics/resource) | [Reflection (auto)](https://causeway.apache.org/docs/latest/core/overview/) | [From DivJson](https://divkit.tech/schema) |
 | **Custom pages** | [Full control](examples.md) | ❌ Not possible | ❌ Not possible | [⚠️ Via components](https://docs.adminjs.co/ui-customization/writing-your-own-components) | [⚠️ Via XML/Wicket](https://causeway.apache.org/docs/latest/userguide/layout/) | [Via JSON](https://divkit.tech/doc) |
 | **Bootstrap grid** | [✅ Row/Col + Fieldset](pipeline.md) | ⚠️ [uiSchema](https://rjsf-team.github.io/react-jsonschema-form/docs/api-reference/uiSchema) layout | ⚠️ [FormGrid](https://formilyjs.org/zh-CN/components/form-grid) | ✅ [Design system](https://docs.adminjs.co/ui-customization/adminjs-design-system) | ⚠️ [XML layout](https://causeway.apache.org/docs/latest/userguide/layout/) | Custom containers |
 | **Enterprise table** | [✅ AgGrid built-in](architecture.md) | ❌ | ❌ | ❌ | ❌ | ❌ |
@@ -298,12 +298,12 @@ Apache Causeway is the **only direct competitor** in the "Java/Kotlin enterprise
 
 | Aspect | Apache Causeway | ProjectForge |
 |--------|----------------|-------------|
-| **UI generation** | Automatic, via Java reflection | Explicit, via Kotlin DSL |
+| **UI generation** | Automatic, via Java reflection | Explicit, via Kotlin/C/JS DSL |
 | **Control** | Through annotations + XML layout | Through code |
 | **Flexibility** | Limited by framework conventions | Full — UI = code |
 | **Dev speed** | Very fast (write model only) | Medium (each page manually) |
 | **UI framework** | Wicket (server-rendered) | React (client-rendered) |
-| **Learning curve** | Need DDD + Causeway annotations | Need to know Kotlin DSL |
+| **Learning curve** | Need DDD + Causeway annotations | Need Kotlin, C, or JS DSL |
 | **Enterprise table** | Basic collections | AgGrid (full-featured) |
 
 ### When to choose Apache Causeway
@@ -454,33 +454,57 @@ DivKit is a **mobile-first SDUI** framework with native rendering on iOS/Android
 
 ### What is this
 
-Server-Driven UI framework built into the ProjectForge platform. The server (Kotlin/Spring) defines the UI using a Kotlin DSL, serializes it to JSON, and the React client (`DynamicRenderer`) renders it recursively.
+Server-Driven UI framework built into the ProjectForge platform. Provides **three ways** to generate UI: Kotlin DSL (production), C99 API (`dynamiclayout.h` — single header, 300 lines), and JavaScript DSL (`JsLayout` — live in-browser). All three produce the same JSON; the React client (`DynamicRenderer`) renders it recursively.
 
 ```
 Kotlin DSL → JSON (Gson) → DynamicRenderer (React) → DOM
+C99 API   → JSON ────────→ DynamicRenderer (React) → DOM
+JsLayout  → JSON ────────→ DynamicRenderer (React) → DOM
 ```
 
 ### How it works
 
 ```kotlin
-val layout = UILayout(
-  title = I18nKey("user.edit"),
-  content = UICol(elements = listOf(
-    UIFieldset(title = I18nKey("user.details"), elements = listOf(
-      UIInput(id = "name", maxLength = 50),
-      UIInput(id = "email", required = true),
-    )),
-    UIButton(id = "save", responseAction = ResponseAction(type = SAVE)),
-  ))
-)
+// Kotlin DSL (production, Spring Boot)
+val layout = UILayout("user.edit")
+layout.add(UIFieldset("user.details").add(
+  UIInput(id = "name", maxLength = 50),
+  UIInput(id = "email", required = true),
+))
+layout.addAction(UIButton.createSaveButton("save"))
 ```
+
+```c
+// C API (embedded, microcontrollers)
+#include "dynamiclayout.h"
+char buf[8192]; DL b = dl_begin(buf, sizeof(buf), "Device Diagnostics");
+dl_fieldset(&b, "Configuration");
+dl_input(&b, "name", "Device Name");
+dl_button(&b, "save", "Save", "primary");
+dl_end(&b); // buf now contains valid DynamicLayout JSON
+```
+
+```js
+// JsLayout DSL (playground, prototyping)
+const page = new JsLayout('Feedback');
+page.fieldset('Your Details');
+page.input('name', 'Name');
+page.input('email', 'Email');
+page.endFieldset();
+page.button('send', 'Send', 'primary', true);
+page.toJSON();
+```
+
+All three produce the same `{type, key, ...}` JSON — the React client doesn't care where the JSON came from.
 
 ### Key numbers
 
 - [ProjectForge](https://projectforge.org/) — proprietary enterprise framework
 - [30 registered components](https://github.com/MaurerAnton/projectforge-dynamiclayout) in `DynamicRenderer`
 - 33 `UIElementType` values, [59 Kotlin UI files](https://github.com/MaurerAnton/projectforge-dynamiclayout/tree/master/projectforge-rest), [90 React components](https://github.com/MaurerAnton/projectforge-dynamiclayout/tree/master/projectforge-webapp)
-- Stack: [Kotlin](https://kotlinlang.org/) / [Spring Boot](https://spring.io/projects/spring-boot) / [React](https://react.dev/) / [Gson](https://github.com/google/gson)
+- [dynamiclayout.h](https://github.com/MaurerAnton/projectforge-dynamiclayout/blob/master/dynamiclayout.h) — single-header C99/C++98 library (300 lines, zero deps)
+- [JsLayout](https://github.com/MaurerAnton/projectforge-dynamiclayout/blob/master/playground/index.html) — live JavaScript DSL (90 lines) for playground/prototyping
+- Stack: [Kotlin](https://kotlinlang.org/) / [C99](https://en.wikipedia.org/wiki/C99) / [JavaScript](https://developer.mozilla.org/en-US/docs/Web/JavaScript) → [JSON](https://www.json.org/) → [React](https://react.dev/)
 - [GPLv3 license](https://github.com/MaurerAnton/projectforge-dynamiclayout/blob/master/LICENSE)
 
 ### When to choose ProjectForge
@@ -494,7 +518,7 @@ val layout = UILayout(
 ### When NOT to choose
 
 - Need forms only — [RJSF](#1-rjsf-react-jsonschema-form) or [JSON Forms](#2-json-forms-eclipsesource) are simpler
-- Node.js/Python/Go backend — no native integration outside JVM
+- Node.js/Python/Go backend — production Kotlin layer is JVM-centric (though [C API](https://github.com/MaurerAnton/projectforge-dynamiclayout/blob/master/dynamiclayout.h) enables embedded/native generation)
 - Mobile apps — [DivKit](#5-divkit-yandex) handles iOS/Android natively
 - SEO required — client-rendered only, no server-side HTML
 - Small forms or quick prototypes — overkill for simple use cases
@@ -526,7 +550,7 @@ val layout = UILayout(
 
 ### Key difference
 
-ProjectForge is the **only framework** in this comparison that combines: full SDUI (server controls everything) + Kotlin/Spring native integration + enterprise table ([AgGrid](https://ag-grid.com/)) + complete form system (30+ UI components) + server-side validation and access control — all in a single stack.
+ProjectForge is the **only framework** in this comparison that combines: full SDUI (server controls everything) + Kotlin/Spring native integration + enterprise table ([AgGrid](https://ag-grid.com/)) + complete form system (30+ UI components) + server-side validation and access control + **multi-language generation** (Kotlin, C99, JavaScript) — all over a single JSON contract.
 
 ---
 
@@ -591,9 +615,9 @@ Each `setData()` call re-renders the entire DynamicLayout tree. There is no fiel
 
 The same read-only page for 100 users is generated 100 times. Compare with Spring `@Cacheable` support (which is [now added](../issues.md) but not widely applied).
 
-### 6. Tight to JVM ecosystem
+### 6. Tight to JVM ecosystem (production)
 
-The KMP extraction enables non-JVM targets, but the core is still designed around JVM patterns (Gson, Jackson, Spring annotations). Generating layouts from Node.js or Python would require writing custom serializers.
+The KMP extraction and C API (`dynamiclayout.h`) enable non-JVM JSON generation, but the production-grade Kotlin layer (Spring Boot, JPA, i18n, access control) is JVM-only. You get validation, auto-detection, and security only when running on the JVM.
 
 ### 7. Client-side only
 
@@ -613,7 +637,7 @@ DynamicRenderer is tied to React. Unlike JSON Forms (React + Angular + Vue) or D
 - Need **full SDUI** — server controls not just data but layout, actions, and validation
 - Complex forms + enterprise tables (AgGrid) + custom page layouts
 - Server-side validation and access control built into UI
-- Single stack (Kotlin/Java) for UI definition and business logic
+- Multiple language targets — generate JSON from Kotlin (production), C (embedded), or JavaScript (prototyping)
 
 ### When to consider alternatives
 
@@ -631,6 +655,6 @@ DynamicRenderer is tied to React. Unlike JSON Forms (React + Angular + Vue) or D
 | Your domain | Complex, many custom screens | Fits object model naturally |
 | UI | React, modern, fully custom | Wicket, Bootstrap, template-like |
 | Team size | Resources for UI code | Minimal UI developers needed |
-| Change speed | Medium (UI = Kotlin code) | High (UI = annotations + XML) |
+| Change speed | Medium (UI = code) | High (UI = annotations + XML) |
 | Frontend tech | React | Wicket (server-rendered HTML) |
 | Tables | AgGrid enterprise | Basic object collections |
