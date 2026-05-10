@@ -300,11 +300,33 @@ Key design decisions:
 
 ```
 dynamiclayout.h           # Single-header C library (300 lines)
-examples/cpp/
-├── c-example.c           # Pure C99 example
-├── cpp-example.cpp       # C++ example
-└── demo.c                # Interactive C demo
+dynamiclayout.go          # Go package (350 lines, stdlib only)
+dynamiclayout.py          # Python module (280 lines, stdlib only)
+dynamiclayout.d           # D module (240 lines, Phobos only)
+dynamiclayout.zig         # Zig module (230 lines, stdlib only)
+dynamiclayout.ads         # Ada spec (API definition)
+dynamiclayout.adb         # Ada body (implementation, 240 lines)
+examples/
+├── cpp/
+│   ├── c-example.c       # Pure C99 example
+│   ├── cpp-example.cpp   # C++ example
+│   └── demo.c            # Interactive C demo
+└── go/
+    └── go-example.go     # Go example (5 scenarios: about, form, registration, device, aggrid)
 ```
+
+### Porting to a new language
+
+The builder pattern is the same in every language. To port `dynamiclayout` to a new language, implement:
+
+1. **Builder state** — track buffer position, nesting depth, comma flag, key counter
+2. **JSON primitives** — `obj()`, `arr()`, `kv()`, `close()` for opening/closing structures
+3. **Element functions** — `fieldset()`, `input()`, `label()`, `button()`, etc. Each is ~8 lines.
+4. **Shortcuts** — `section()`, `feedbackForm()` are convenience wrappers.
+
+Reference implementation: `dynamiclayout.h` (C) — the simplest, most portable version. ~300 lines, zero dependencies.
+
+> **Playground:** The playground shows C and JS source for every preset. Switch between views to see how the same layout looks in different languages. The JSON output is identical regardless of the generator language.
 
 ---
 
