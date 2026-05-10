@@ -299,20 +299,22 @@ Key design decisions:
 ### Files
 
 ```
-dynamiclayout.h           # Single-header C library (300 lines)
+dynamiclayout.h           # C/C++ — single-header library (300 lines)
 dynamiclayout.go          # Go package (350 lines, stdlib only)
 dynamiclayout.py          # Python module (280 lines, stdlib only)
+dynamiclayout.lua         # Lua module (160 lines, embedded-ready)
+dynamiclayout.rb          # Ruby module (140 lines)
+dynamiclayout.php         # PHP class (120 lines)
 dynamiclayout.d           # D module (240 lines, Phobos only)
 dynamiclayout.zig         # Zig module (230 lines, stdlib only)
-dynamiclayout.ads         # Ada spec (API definition)
-dynamiclayout.adb         # Ada body (implementation, 240 lines)
-examples/
-├── cpp/
-│   ├── c-example.c       # Pure C99 example
-│   ├── cpp-example.cpp   # C++ example
-│   └── demo.c            # Interactive C demo
-└── go/
-    └── go-example.go     # Go example (5 scenarios: about, form, registration, device, aggrid)
+dynamiclayout.nim         # Nim module (170 lines)
+dynamiclayout.ads/adb     # Ada spec + body (240 lines)
+DynamicLayout.cs          # C# class (150 lines, .NET 6+)
+DynamicLayout.swift       # Swift class (140 lines, iOS/macOS)
+Layout.java               # Java class (160 lines, Java 11+)
+Layout.kt                 # Kotlin class (160 lines, JVM/JS/Native)
+examples/go/go-example.go # Go example (5 scenarios)
+examples/cpp/             # C/C++ examples
 ```
 
 ### Porting to a new language
