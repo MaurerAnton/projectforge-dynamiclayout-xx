@@ -112,7 +112,10 @@ class MainActivity : ComponentActivity() {
 
 // ── Contacts page (step by step) ──
 
-data class Contact(val id: String, val name: String, val phone: String = "")
+data class Contact(
+    val id: String, val name: String, val phone: String = "", val email: String = "",
+    val org: String = "", val addr: String = "", val note: String = "", val website: String = ""
+)
 
 @Composable fun ContactsPage(ctx: android.content.Context, onBack: () -> Unit, reload: () -> Unit) {
     var step by remember { mutableStateOf(1) }
@@ -141,7 +144,12 @@ data class Contact(val id: String, val name: String, val phone: String = "")
                 Spacer(Modifier.height(4.dp))
                 Button(onClick = { try { val c = ctx.contentResolver.query(android.provider.ContactsContract.Contacts.CONTENT_URI, null, null, null, null); val list = mutableListOf<Contact>(); c?.use { val ii = it.getColumnIndex(android.provider.ContactsContract.Contacts._ID); val ni = it.getColumnIndex(android.provider.ContactsContract.Contacts.DISPLAY_NAME); if (ii >= 0 && ni >= 0 && it.moveToFirst()) list.add(Contact(it.getString(ii)?:"", it.getString(ni)?:"?")) }; dbg = "OK read 1: ${list.size}" } catch (t: Throwable) { dbg = "${t.javaClass.simpleName}: ${t.message}" } }) { Text("Test read 1st contact") }
                 Spacer(Modifier.height(4.dp))
-                Button(onClick = { try { val list = loadContacts(ctx); contacts = list; dbg = "OK read all: ${list.size}"; if (list.isNotEmpty()) step = 3 } catch (t: Throwable) { dbg = "${t.javaClass.simpleName}: ${t.message}" } }) { Text("Test read all + show") }
+                Button(onClick = { try { val list = loadContactsBasic(ctx); contacts = list; dbg = "OK read all: ${list.size}"; if (list.isNotEmpty()) step = 3 } catch (t: Throwable) { dbg = "${t.javaClass.simpleName}: ${t.message}" } }) { Text("Test read all + show") }
+                Spacer(Modifier.height(8.dp))
+                Text("Load with extras:", fontWeight = FontWeight.Medium); Spacer(Modifier.height(4.dp))
+                Button(onClick = { try { val list = loadContactsWithPhones(ctx); contacts = list; dbg = "OK phones: ${list.count{it.phone.isNotBlank()}}"; if (list.isNotEmpty()) step = 3 } catch (t: Throwable) { dbg = "${t.javaClass.simpleName}: ${t.message}" } }) { Text("Load + phones") }
+                Button(onClick = { try { val list = loadContactsWithEmails(ctx); contacts = list; dbg = "OK emails: ${list.count{it.email.isNotBlank()}}"; if (list.isNotEmpty()) step = 3 } catch (t: Throwable) { dbg = "${t.javaClass.simpleName}: ${t.message}" } }) { Text("Load + phones + emails") }
+                Button(onClick = { try { val list = loadContactsFull(ctx); contacts = list; dbg = "OK full: ${list.size}"; if (list.isNotEmpty()) step = 3 } catch (t: Throwable) { dbg = "${t.javaClass.simpleName}: ${t.message}" } }) { Text("Load + all fields") }
                 Spacer(Modifier.height(16.dp))
                 OutlinedButton(onClick = onBack) { Text("Back") }
             }}
@@ -182,16 +190,66 @@ data class Contact(val id: String, val name: String, val phone: String = "")
     }
 }
 
-private fun loadContacts(ctx: android.content.Context): List<Contact> {
+private fun loadContactsBasic(ctx: android.content.Context): List<Contact> {
     val list = mutableListOf<Contact>()
     val c = ctx.contentResolver.query(android.provider.ContactsContract.Contacts.CONTENT_URI, null, null, null, null) ?: return list
     c.use {
         val idIdx = it.getColumnIndex(android.provider.ContactsContract.Contacts._ID)
         val nmIdx = it.getColumnIndex(android.provider.ContactsContract.Contacts.DISPLAY_NAME)
         if (idIdx < 0 || nmIdx < 0) return list
-        while (it.moveToNext() && list.size < 20) {
-            list.add(Contact(it.getString(idIdx) ?: "", it.getString(nmIdx) ?: "?"))
-        }
+        while (it.moveToNext() && list.size < 20) list.add(Contact(it.getString(idIdx) ?: "", it.getString(nmIdx) ?: "?"))
+    }
+    return list
+}
+
+private fun loadContactsWithPhones(ctx: android.content.Context): List<Contact> {
+    val list = loadContactsBasic(ctx)
+    val c = ctx.contentResolver.query(android.provider.ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null, null, null, null) ?: return list
+    c.use {
+        val idIdx = it.getColumnIndex(android.provider.ContactsContract.CommonDataKinds.Phone.CONTACT_ID)
+        val phIdx = it.getColumnIndex(android.provider.ContactsContract.CommonDataKinds.Phone.NUMBER)
+        if (idIdx < 0 || phIdx < 0) return list
+        val idx = list.associateBy { it.id }.toMutableMap()
+        while (it.moveToNext()) { val cid = it.getString(idIdx) ?: continue; idx[cid]?.let { if (it.phone.isBlank()) idx[cid] = it.copy(phone = it.getString(phIdx) ?: "") } }
+    }
+    return list
+}
+
+private fun loadContactsWithEmails(ctx: android.content.Context): List<Contact> {
+    val list = loadContactsWithPhones(ctx)
+    val c = ctx.contentResolver.query(android.provider.ContactsContract.CommonDataKinds.Email.CONTENT_URI, null, null, null, null) ?: return list
+    c.use {
+        val idIdx = it.getColumnIndex(android.provider.ContactsContract.CommonDataKinds.Email.CONTACT_ID)
+        val emIdx = it.getColumnIndex(android.provider.ContactsContract.CommonDataKinds.Email.ADDRESS)
+        if (idIdx < 0 || emIdx < 0) return list
+        val idx = list.associateBy { it.id }.toMutableMap()
+        while (it.moveToNext()) { val cid = it.getString(idIdx) ?: continue; idx[cid]?.let { if (it.email.isBlank()) idx[cid] = it.copy(email = it.getString(emIdx) ?: "") } }
+    }
+    return list
+}
+
+private fun loadContactsFull(ctx: android.content.Context): List<Contact> {
+    val list = loadContactsWithEmails(ctx)
+    // Organization
+    val cOrg = ctx.contentResolver.query(android.provider.ContactsContract.CommonDataKinds.Organization.CONTENT_URI, null, null, null, null)
+    cOrg?.use {
+        val idIdx = it.getColumnIndex(android.provider.ContactsContract.CommonDataKinds.Organization.CONTACT_ID)
+        val orgIdx = it.getColumnIndex(android.provider.ContactsContract.CommonDataKinds.Organization.COMPANY)
+        if (idIdx >= 0 && orgIdx >= 0) { val idx = list.associateBy { it.id }.toMutableMap(); while (it.moveToNext()) { val cid = it.getString(idIdx) ?: continue; idx[cid]?.let { c -> if (c.org.isBlank()) idx[cid] = c.copy(org = it.getString(orgIdx) ?: "") } } }
+    }
+    // Address
+    val cAddr = ctx.contentResolver.query(android.provider.ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_URI, null, null, null, null)
+    cAddr?.use {
+        val idIdx = it.getColumnIndex(android.provider.ContactsContract.CommonDataKinds.StructuredPostal.CONTACT_ID)
+        val addrIdx = it.getColumnIndex(android.provider.ContactsContract.CommonDataKinds.StructuredPostal.FORMATTED_ADDRESS)
+        if (idIdx >= 0 && addrIdx >= 0) { val idx = list.associateBy { it.id }.toMutableMap(); while (it.moveToNext()) { val cid = it.getString(idIdx) ?: continue; idx[cid]?.let { c -> if (c.addr.isBlank()) idx[cid] = c.copy(addr = it.getString(addrIdx) ?: "") } } }
+    }
+    // Website
+    val cWeb = ctx.contentResolver.query(android.provider.ContactsContract.CommonDataKinds.Website.CONTENT_URI, null, null, null, null)
+    cWeb?.use {
+        val idIdx = it.getColumnIndex(android.provider.ContactsContract.CommonDataKinds.Website.CONTACT_ID)
+        val urlIdx = it.getColumnIndex(android.provider.ContactsContract.CommonDataKinds.Website.URL)
+        if (idIdx >= 0 && urlIdx >= 0) { val idx = list.associateBy { it.id }.toMutableMap(); while (it.moveToNext()) { val cid = it.getString(idIdx) ?: continue; idx[cid]?.let { c -> if (c.website.isBlank()) idx[cid] = c.copy(website = it.getString(urlIdx) ?: "") } } }
     }
     return list
 }
