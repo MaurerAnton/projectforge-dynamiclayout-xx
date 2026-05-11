@@ -184,7 +184,8 @@ fun RenderEl(
         "SPACER" -> Spacer(Modifier.height(((el["width"] as? Number)?.toFloat() ?: 20f).dp))
         "PROGRESS" -> Column(Modifier.padding(bottom = 8.dp)) {
             el["label"]?.let { Text(it.toString(), modifier = Modifier.padding(bottom = 4.dp)) }
-            LinearProgressIndicator(progress = { ((el["progress"] as? Number)?.toFloat() ?: 0f) / 100f }, Modifier.fillMaxWidth())
+            val pct = ((el["progress"] as? Number)?.toFloat() ?: 0f) / 100f
+            LinearProgressIndicator(progress = pct, modifier = Modifier.fillMaxWidth())
         }
         "INPUT" -> {
             val id = el["id"]?.toString() ?: ""
@@ -206,7 +207,9 @@ fun RenderEl(
             var expanded by remember { mutableStateOf(false) }
             val values = (el["values"] as? List<*>)?.mapNotNull {
                 val m = it as? Map<*, *> ?: return@mapNotNull null
-                m["id"]?.toString() to m["displayName"]?.toString()
+                val vId = m["id"]?.toString() ?: return@mapNotNull null
+                val vName = m["displayName"]?.toString() ?: vId
+                vId to vName
             } ?: emptyList()
             val selected = values.firstOrNull { it.first == data[id]?.toString() }?.second ?: ""
             Box(Modifier.padding(bottom = 8.dp)) {
