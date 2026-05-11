@@ -162,13 +162,20 @@ data class Contact(
             }
         }
         3 -> { // Step 3: show contacts
+            var sort by remember { mutableStateOf("name") }
             Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text("Contacts (${contacts.size})", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                     OutlinedButton(onClick = onBack) { Text("Back") }
                 }
-                Spacer(Modifier.height(12.dp))
-                contacts.take(100).forEach { c ->
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                    listOf("name" to "A-Z", "-name" to "Z-A").forEach { (k, l) ->
+                        TextButton(onClick = { sort = k }) { Text(l, color = if (sort == k) MaterialTheme.colorScheme.primary else Color.Gray, style = MaterialTheme.typography.labelSmall) }
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+                val sorted = remember(contacts, sort) { when (sort) { "-name" -> contacts.sortedByDescending { it.name.lowercase() }; else -> contacts.sortedBy { it.name.lowercase() } } }
+                sorted.take(100).forEach { c ->
                     Card(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
                         Column(Modifier.padding(12.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -260,7 +267,12 @@ private fun loadContactsFull(ctx: android.content.Context): List<Contact> {
     }
     // Photos
     for (c in idx.values.toList()) {
-        try { val uri = android.provider.ContactsContract.Contacts.getLookupUri(c.id.toLongOrNull() ?: continue, null) ?: continue; val stream = android.provider.ContactsContract.Contacts.openContactPhotoInputStream(ctx.contentResolver, uri, true); if (stream != null) { val bytes = stream.readBytes(); stream.close(); if (bytes.isNotEmpty()) idx[c.id] = c.copy(photo = bytes) } } catch (_: Exception) {}
+        try {
+            val cid = c.id.toLongOrNull() ?: continue
+            val photoUri = android.content.ContentUris.withAppendedId(android.provider.ContactsContract.Contacts.CONTENT_URI, cid)
+            val stream = android.provider.ContactsContract.Contacts.openContactPhotoInputStream(ctx.contentResolver, photoUri, true)
+            if (stream != null) { val bytes = stream.readBytes(); stream.close(); if (bytes.isNotEmpty()) idx[c.id] = c.copy(photo = bytes) }
+        } catch (_: Exception) {}
     }
     return idx.values.toList()
 }
