@@ -17,7 +17,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -25,64 +27,73 @@ import kotlinx.coroutines.withContext
 // ── Main Activity ──
 
 class MainActivity : ComponentActivity() {
-    private val viewModel = PlaygroundViewModel()
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        if (granted) viewModel.loadContacts(this)
-        else Toast.makeText(this, "Contacts permission required", Toast.LENGTH_LONG).show()
-    }
+    ) { _ -> /* ViewModel handles result */ }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContent {
             MaterialTheme {
-                PlaygroundScreen(viewModel)
+                PlaygroundScreen()
             }
         }
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS)
-            == PackageManager.PERMISSION_GRANTED
+            != PackageManager.PERMISSION_GRANTED
         ) {
-            viewModel.loadContacts(this)
-        } else {
             permissionLauncher.launch(Manifest.permission.READ_CONTACTS)
         }
     }
 }
 
-// ── ViewModel (state holder) ──
+// ── ViewModel ──
 
-class PlaygroundViewModel {
+class PlaygroundViewModel(app: android.app.Application) : AndroidViewModel(app) {
     var contacts by mutableStateOf<List<Contact>>(emptyList())
+        private set
     var filter by mutableStateOf("")
+        private set
     var spec by mutableStateOf<Map<String, Any>>(emptyMap())
+        private set
     var data by mutableStateOf<Map<String, Any>>(emptyMap())
-    private var hasPermission = false
+        private set
+    var isLoading by mutableStateOf(false)
+        private set
+    var error by mutableStateOf<String?>(null)
+        private set
 
-    fun loadContacts(context: android.content.Context) {
-        hasPermission = true
-        lifecycleScope(context).launch {
-            val result = withContext(Dispatchers.IO) {
-                ContactsLoader.load(context, filter)
+    init {
+        loadContacts()
+    }
+
+    fun loadContacts() {
+        isLoading = true
+        error = null
+        viewModelScope.launch {
+            try {
+                val result = withContext(Dispatchers.IO) {
+                    ContactsLoader.load(getApplication(), filter)
+                }
+                contacts = result
+                regenerate()
+                isLoading = false
+            } catch (e: Exception) {
+                error = e.message ?: "Failed to load contacts"
+                isLoading = false
             }
-            contacts = result
-            regenerate()
         }
     }
 
     fun onFilterChange(newFilter: String) {
         filter = newFilter
-        if (hasPermission) {
-            // Reload with filter from the already-loaded list
-            val filtered = if (newFilter.isBlank()) contacts
-            else contacts.filter { it.name.contains(newFilter, ignoreCase = true) }
-            val generated = ContactToJson.generate(filtered, newFilter)
-            spec = generated["ui"] as Map<String, Any>
-            data = generated["data"] as Map<String, Any>
-        }
+        val filtered = if (newFilter.isBlank()) contacts
+        else contacts.filter { it.name.contains(newFilter, ignoreCase = true) }
+        val generated = ContactToJson.generate(filtered, newFilter)
+        spec = generated["ui"] as Map<String, Any>
+        data = generated["data"] as Map<String, Any>
     }
 
     private fun regenerate() {
@@ -90,33 +101,49 @@ class PlaygroundViewModel {
         spec = generated["ui"] as Map<String, Any>
         data = generated["data"] as Map<String, Any>
     }
-
-    private fun lifecycleScope(context: android.content.Context) =
-        (context as ComponentActivity).lifecycleScope
 }
 
 // ── Playground Screen ──
 
 @Composable
-fun PlaygroundScreen(viewModel: PlaygroundViewModel) {
+fun PlaygroundScreen(vm: PlaygroundViewModel = viewModel()) {
     Surface(modifier = Modifier.fillMaxSize()) {
-        if (viewModel.spec.isEmpty()) {
-            Box(Modifier.fillMaxSize()) {
+        when {
+            vm.isLoading -> Box(Modifier.fillMaxSize()) {
+                Column(Modifier.align(androidx.compose.ui.Alignment.Center),
+                    horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
+                ) {
+                    CircularProgressIndicator()
+                    Spacer(Modifier.height(8.dp))
+                    Text("Loading contacts...")
+                }
+            }
+            vm.error != null -> Box(Modifier.fillMaxSize()) {
+                Column(Modifier.align(androidx.compose.ui.Alignment.Center).padding(32.dp),
+                    horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
+                ) {
+                    Text("Error loading contacts", color = MaterialTheme.colorScheme.error)
+                    Spacer(Modifier.height(8.dp))
+                    Text(vm.error ?: "", style = MaterialTheme.typography.bodySmall)
+                    Spacer(Modifier.height(16.dp))
+                    Button(onClick = { vm.loadContacts() }) { Text("Retry") }
+                }
+            }
+            vm.spec.isEmpty() -> Box(Modifier.fillMaxSize()) {
                 CircularProgressIndicator(Modifier.align(androidx.compose.ui.Alignment.Center))
             }
-        } else {
-            DynamicLayout(
-                spec = viewModel.spec,
-                data = viewModel.data,
+            else -> DynamicLayout(
+                spec = vm.spec,
+                data = vm.data,
                 onUpdate = { updated ->
                     val searchVal = updated["search"] as? String ?: ""
-                    if (searchVal != viewModel.filter) {
-                        viewModel.onFilterChange(searchVal)
+                    if (searchVal != vm.filter) {
+                        vm.onFilterChange(searchVal)
                     }
                 },
                 onAction = { id, _ ->
                     when (id) {
-                        "refresh" -> viewModel.onFilterChange(viewModel.filter)
+                        "refresh" -> vm.loadContacts()
                     }
                 }
             )
@@ -124,7 +151,7 @@ fun PlaygroundScreen(viewModel: PlaygroundViewModel) {
     }
 }
 
-// ── DynamicLayout Compose Renderer (inlined for playground) ──
+// ── DynamicLayout Compose Renderer ──
 
 @Composable
 fun DynamicLayout(
@@ -135,7 +162,7 @@ fun DynamicLayout(
     onAction: ((String, Map<String, Any?>?) -> Unit)? = null
 ) {
     val state = remember { mutableStateMapOf<String, Any?>() }
-    LaunchedEffect(data) { state.clear(); state.putAll(data) }
+    LaunchedEffect(data) { state.clear(); data.forEach { (k, v) -> state[k] = v } }
 
     Column(
         modifier = modifier
@@ -194,8 +221,7 @@ fun RenderEl(
         "LABEL" -> Text(el["label"]?.toString() ?: "", modifier = Modifier.padding(bottom = 4.dp), fontWeight = FontWeight.Medium)
         "ALERT" -> {
             val bg = mapOf("info" to Color(0xFFE0F0FF), "warning" to Color(0xFFFFF3CD), "danger" to Color(0xFFFFE0E0))
-            Text(el["message"]?.toString() ?: "", Modifier.fillMaxWidth().padding(12.dp), color = Color(0xFF333333),
-                style = MaterialTheme.typography.bodyMedium)
+            Text(el["message"]?.toString() ?: "", Modifier.fillMaxWidth().padding(12.dp), color = Color(0xFF333333))
         }
         "BADGE" -> {
             val c = mapOf("primary" to Color(0xFF0D6EFD), "secondary" to Color(0xFF6C757D), "success" to Color(0xFF198754))
@@ -236,8 +262,7 @@ fun RenderEl(
             val c = mapOf("primary" to MaterialTheme.colorScheme.primary, "secondary" to Color.Gray)
             Button(
                 onClick = { onAction?.invoke(el["id"]?.toString() ?: "", el["responseAction"] as? Map<String, Any?>) },
-                colors = ButtonDefaults.buttonColors(containerColor = c[el["color"]?.toString()] ?: MaterialTheme.colorScheme.primary),
-                modifier = Modifier
+                colors = ButtonDefaults.buttonColors(containerColor = c[el["color"]?.toString()] ?: MaterialTheme.colorScheme.primary)
             ) {
                 Text(el["title"]?.toString() ?: el["id"]?.toString() ?: "")
             }
