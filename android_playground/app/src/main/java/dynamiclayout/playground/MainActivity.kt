@@ -73,9 +73,6 @@ class MainActivity : ComponentActivity() {
             Text("build 29", style = MaterialTheme.typography.labelSmall, color = Color.Gray,
                 modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp))
         }
-    }
-            }
-        }
         return
     }
 
