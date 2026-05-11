@@ -191,6 +191,7 @@ data class Contact(
                             if (c.email.isNotBlank()) Text("✉ ${c.email}", style = MaterialTheme.typography.bodySmall)
                             if (c.org.isNotBlank()) Text("🏢 ${c.org}", style = MaterialTheme.typography.bodySmall)
                             if (c.addr.isNotBlank()) Text("📍 ${c.addr}", style = MaterialTheme.typography.bodySmall)
+                            if (c.note.isNotBlank()) Text("📝 ${c.note}", style = MaterialTheme.typography.bodySmall)
                         }
                     }
                 }
@@ -264,6 +265,13 @@ private fun loadContactsFull(ctx: android.content.Context): List<Contact> {
         val idIdx = cur.getColumnIndex(android.provider.ContactsContract.Data.CONTACT_ID)
         val d1Idx = cur.getColumnIndex(android.provider.ContactsContract.Data.DATA1)
         if (idIdx >= 0 && d1Idx >= 0) while (cur.moveToNext()) { val cid = cur.getString(idIdx) ?: continue; idx[cid]?.let { c -> if (c.addr.isBlank()) idx[cid] = c.copy(addr = cur.getString(d1Idx) ?: "") } }
+    }
+    // Notes via Data table
+    val noteSelArgs = arrayOf(android.provider.ContactsContract.CommonDataKinds.Note.CONTENT_ITEM_TYPE)
+    ctx.contentResolver.query(android.provider.ContactsContract.Data.CONTENT_URI, null, orgSel, noteSelArgs, null)?.use { cur ->
+        val idIdx = cur.getColumnIndex(android.provider.ContactsContract.Data.CONTACT_ID)
+        val d1Idx = cur.getColumnIndex(android.provider.ContactsContract.Data.DATA1)
+        if (idIdx >= 0 && d1Idx >= 0) while (cur.moveToNext()) { val cid = cur.getString(idIdx) ?: continue; idx[cid]?.let { c -> if (c.note.isBlank()) idx[cid] = c.copy(note = cur.getString(d1Idx) ?: "") } }
     }
     // Photos
     for (c in idx.values.toList()) {
