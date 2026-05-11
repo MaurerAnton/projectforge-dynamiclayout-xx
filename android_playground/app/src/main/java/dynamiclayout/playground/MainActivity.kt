@@ -149,13 +149,13 @@ data class Contact(val id: String, val name: String, val phone: String = "")
                 }
             }
         }
-        21 -> stepScreen("Step 2a: Create empty list", "Creating empty list...", step, 22,
+        21 -> StepScreen("Step 2a: Create empty list", "Creating empty list...", step, 22,
             "Creates `emptyList<Contact>()` — no ContentResolver yet")
-        22 -> stepScreen("Step 2b: Open cursor (no read)", "Opening ContentResolver query...", step, 23,
+        22 -> StepScreen("Step 2b: Open cursor (no read)", "Opening ContentResolver query...", step, 23,
             "Calls `contentResolver.query()` + immediately `close()` — no column access")
-        23 -> stepScreen("Step 2c: Read 1st contact", "Reading first contact from cursor...", step, 24,
+        23 -> StepScreen("Step 2c: Read 1st contact", "Reading first contact from cursor...", step, 24,
             "Calls `moveToFirst()`, reads `_ID` + `DISPLAY_NAME` columns")
-        24 -> stepScreen("Step 2d: Read all contacts", "Reading all contacts...", step, 25,
+        24 -> StepScreen("Step 2d: Read all contacts", "Reading all contacts...", step, 25,
             "Loops through cursor, reads up to 20 contacts")
         25 -> { // Show loaded
             if (err != null) {
@@ -200,6 +200,21 @@ private fun loadContacts(ctx: android.content.Context): List<Contact> {
         }
     }
     return list
+}
+
+@Composable
+fun StepScreen(title: String, status: String, step: Int, nextStep: Int, desc: String) {
+    Box(Modifier.fillMaxSize().padding(32.dp)) {
+        Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(title, style = MaterialTheme.typography.headlineSmall)
+            Spacer(Modifier.height(8.dp))
+            Text(desc, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+            Spacer(Modifier.height(24.dp))
+            CircularProgressIndicator()
+            Spacer(Modifier.height(8.dp))
+            Text(status)
+        }
+    }
 }
 
 // ── DynamicLayout Renderer ──
