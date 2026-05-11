@@ -372,9 +372,272 @@ window.JsLayout = class JsLayout {
         layout: this.layout,
         actions: this.actions.length > 0 ? this.actions : undefined,
         translations: {},
-        userAccess: { cancel: true }
-      }
-    };
+    userAccess: { cancel: true }
+  }
+};
+
+// ── Real ProjectForge interfaces ──
+
+const EXAMPLE_USER_EDIT = {
+  ui: {
+    title: 'user.edit — ProjectForge',
+    uid: 'pf-user',
+    layout: [
+      { type: 'FIELDSET', key: 'fs1', title: 'User Data', content: [
+        { type: 'ROW', key: 'r1', content: [
+          { type: 'COL', key: 'c1', length: { xs: 12, md: 6 }, content: [
+            { type: 'INPUT', key: 'i1', id: 'username', label: 'Username', required: true },
+            { type: 'INPUT', key: 'i2', id: 'firstName', label: 'First Name', required: true },
+            { type: 'INPUT', key: 'i3', id: 'lastName', label: 'Last Name', required: true },
+          ]},
+          { type: 'COL', key: 'c2', length: { xs: 12, md: 6 }, content: [
+            { type: 'INPUT', key: 'i4', id: 'email', label: 'E‑mail', required: true },
+            { type: 'SELECT', key: 's1', id: 'locale', label: 'Language', values: [
+              { id: 'en', displayName: 'English' }, { id: 'de', displayName: 'Deutsch' },
+            ]},
+            { type: 'SELECT', key: 's2', id: 'timezone', label: 'Timezone', values: [
+              { id: 'UTC', displayName: 'UTC' }, { id: 'CET', displayName: 'CET (UTC+1)' },
+            ]},
+          ]}
+        ]},
+        { type: 'INPUT', key: 'i5', id: 'personalPhone', label: 'Phone' },
+        { type: 'TEXTAREA', key: 't1', id: 'description', label: 'Description', rows: 3 },
+      ]},
+      { type: 'FIELDSET', key: 'fs2', title: 'Access Control', content: [
+        { type: 'CHECKBOX', key: 'cb1', id: 'admin', label: 'Administrator' },
+        { type: 'CHECKBOX', key: 'cb2', id: 'finance', label: 'Finance role' },
+        { type: 'CHECKBOX', key: 'cb3', id: 'hr', label: 'HR role' },
+        { type: 'CHECKBOX', key: 'cb4', id: 'restricted', label: 'Restricted user' },
+        { type: 'READONLY_FIELD', key: 'ro1', id: 'lastLogin', label: 'Last login' },
+        { type: 'READONLY_FIELD', key: 'ro2', id: 'createdAt', label: 'Created' },
+      ]},
+    ],
+    actions: [
+      { type: 'BUTTON', key: 'b1', id: 'save', title: 'Save', color: 'primary', default: true },
+      { type: 'BUTTON', key: 'b2', id: 'copy', title: 'Copy', color: 'secondary' },
+      { type: 'BUTTON', key: 'b3', id: 'delete', title: 'Delete', color: 'danger' },
+      { type: 'BUTTON', key: 'b4', id: 'cancel', title: 'Cancel', color: 'secondary' },
+    ],
+    translations: {}, userAccess: { insert: true, update: true, delete: true, cancel: true }
+  }
+};
+
+const EXAMPLE_TIMESHEET = {
+  ui: {
+    title: 'timesheet.edit — ProjectForge',
+    uid: 'pf-timesheet',
+    layout: [
+      { type: 'FIELDSET', key: 'fs1', title: 'Timesheet Entry', content: [
+        { type: 'ROW', key: 'r1', content: [
+          { type: 'COL', key: 'c1', length: { xs: 12, md: 6 }, content: [
+            { type: 'INPUT', key: 'i1', id: 'date', label: 'Date', dataType: 'DATE', required: true },
+            { type: 'INPUT', key: 'i2', id: 'startTime', label: 'Start', dataType: 'TIME', required: true },
+            { type: 'INPUT', key: 'i3', id: 'stopTime', label: 'Stop', dataType: 'TIME', required: true },
+          ]},
+          { type: 'COL', key: 'c2', length: { xs: 12, md: 6 }, content: [
+            { type: 'INPUT', key: 'i4', id: 'duration', label: 'Duration (hours)', dataType: 'BIG_DECIMAL' },
+            { type: 'SELECT', key: 's1', id: 'task', label: 'Task', values: [
+              { id: 'dev', displayName: 'Development' }, { id: 'meet', displayName: 'Meetings' },
+              { id: 'sup', displayName: 'Support' }, { id: 'doc', displayName: 'Documentation' },
+            ]},
+          ]}
+        ]},
+        { type: 'TEXTAREA', key: 't1', id: 'description', label: 'Description', rows: 3 },
+        { type: 'CHECKBOX', key: 'cb1', id: 'billable', label: 'Billable' },
+      ]},
+      { type: 'FIELDSET', key: 'fs2', title: 'Cost Assignment', content: [
+        { type: 'ROW', key: 'r2', content: [
+          { type: 'COL', key: 'c3', length: { xs: 12, md: 4 }, content: [
+            { type: 'SELECT', key: 's2', id: 'cost1Type', label: 'Type', values: [
+              { id: 'project', displayName: 'Project' }, { id: 'internal', displayName: 'Internal' },
+            ]},
+          ]},
+          { type: 'COL', key: 'c4', length: { xs: 12, md: 4 }, content: [
+            { type: 'INPUT', key: 'i6', id: 'cost1Pct', label: 'Share %', dataType: 'BIG_DECIMAL' },
+          ]},
+          { type: 'COL', key: 'c5', length: { xs: 12, md: 4 }, content: [
+            { type: 'INPUT', key: 'i7', id: 'cost1Value', label: 'Cost', dataType: 'BIG_DECIMAL' },
+          ]}
+        ]},
+        { type: 'INLINE_GROUP', key: 'ig1', content: [
+          { type: 'BUTTON', key: 'bAdd', id: 'addCost', title: '+ Add Cost Line', color: 'info' },
+        ]},
+      ]},
+    ],
+    actions: [
+      { type: 'BUTTON', key: 'b1', id: 'save', title: 'Save', color: 'primary', default: true },
+      { type: 'BUTTON', key: 'b2', id: 'saveNew', title: 'Save + New', color: 'success' },
+      { type: 'BUTTON', key: 'b3', id: 'delete', title: 'Delete', color: 'danger' },
+      { type: 'BUTTON', key: 'b4', id: 'cancel', title: 'Cancel', color: 'secondary' },
+    ],
+    translations: {}, userAccess: { insert: true, update: true, delete: true, cancel: true }
+  }
+};
+
+const EXAMPLE_SKILLS = {
+  ui: {
+    title: 'skills.matrix — ProjectForge',
+    uid: 'pf-skills',
+    layout: [
+      { type: 'FIELDSET', key: 'fs1', title: 'Technical Skills', content: [
+        { type: 'RATING', key: 'r1', id: 'kotlin', label: 'Kotlin' },
+        { type: 'RATING', key: 'r2', id: 'java', label: 'Java' },
+        { type: 'RATING', key: 'r3', id: 'react', label: 'React' },
+        { type: 'RATING', key: 'r4', id: 'spring', label: 'Spring Boot' },
+        { type: 'RATING', key: 'r5', id: 'sql', label: 'SQL' },
+        { type: 'RATING', key: 'r6', id: 'docker', label: 'Docker' },
+      ]},
+      { type: 'FIELDSET', key: 'fs2', title: 'Soft Skills', content: [
+        { type: 'RATING', key: 'r7', id: 'teamwork', label: 'Teamwork' },
+        { type: 'RATING', key: 'r8', id: 'communication', label: 'Communication' },
+        { type: 'RATING', key: 'r9', id: 'leadership', label: 'Leadership' },
+      ]},
+      { type: 'ALERT', key: 'a1', message: 'Skills matrix for annual review. Rate 1 (beginner) to 5 (expert).', color: 'info' },
+    ],
+    actions: [
+      { type: 'BUTTON', key: 'b1', id: 'save', title: 'Save Assessment', color: 'primary', default: true },
+      { type: 'BUTTON', key: 'b2', id: 'cancel', title: 'Cancel', color: 'secondary' },
+    ],
+    translations: {}, userAccess: { cancel: true }
+  }
+};
+
+const EXAMPLE_ADDRESS = {
+  ui: {
+    title: 'address.edit — ProjectForge',
+    uid: 'pf-address',
+    layout: [
+      { type: 'FIELDSET', key: 'fs1', title: 'Address', content: [
+        { type: 'ROW', key: 'r1', content: [
+          { type: 'COL', key: 'c1', length: { xs: 12, md: 8 }, content: [
+            { type: 'INPUT', key: 'i1', id: 'street', label: 'Street', required: true },
+          ]},
+          { type: 'COL', key: 'c2', length: { xs: 12, md: 4 }, content: [
+            { type: 'INPUT', key: 'i2', id: 'number', label: 'Number' },
+          ]}
+        ]},
+        { type: 'ROW', key: 'r2', content: [
+          { type: 'COL', key: 'c3', length: { xs: 12, md: 4 }, content: [
+            { type: 'INPUT', key: 'i3', id: 'zipCode', label: 'ZIP Code' },
+          ]},
+          { type: 'COL', key: 'c4', length: { xs: 12, md: 8 }, content: [
+            { type: 'INPUT', key: 'i4', id: 'city', label: 'City', required: true },
+          ]}
+        ]},
+        { type: 'SELECT', key: 's1', id: 'country', label: 'Country', values: [
+          { id: 'DE', displayName: 'Germany' }, { id: 'CH', displayName: 'Switzerland' },
+          { id: 'AT', displayName: 'Austria' },
+        ]},
+        { type: 'CHECKBOX', key: 'cb1', id: 'primary', label: 'Primary address' },
+      ]},
+      { type: 'FIELDSET', key: 'fs2', title: 'Contact', content: [
+        { type: 'INPUT', key: 'i5', id: 'phone', label: 'Phone' },
+        { type: 'INPUT', key: 'i6', id: 'fax', label: 'Fax' },
+        { type: 'INPUT', key: 'i7', id: 'mobile', label: 'Mobile' },
+        { type: 'INPUT', key: 'i8', id: 'website', label: 'Website' },
+      ]},
+    ],
+    actions: [
+      { type: 'BUTTON', key: 'b1', id: 'save', title: 'Save', color: 'primary', default: true },
+      { type: 'BUTTON', key: 'b2', id: 'cancel', title: 'Cancel', color: 'secondary' },
+    ],
+    translations: {}, userAccess: { insert: true, update: true, cancel: true }
+  }
+};
+
+const EXAMPLE_VACATION = {
+  ui: {
+    title: 'vacation.request — ProjectForge',
+    uid: 'pf-vacation',
+    layout: [
+      { type: 'FIELDSET', key: 'fs1', title: 'Vacation Request', content: [
+        { type: 'ROW', key: 'r1', content: [
+          { type: 'COL', key: 'c1', length: { xs: 12, md: 6 }, content: [
+            { type: 'INPUT', key: 'i1', id: 'startDate', label: 'From', dataType: 'DATE', required: true },
+          ]},
+          { type: 'COL', key: 'c2', length: { xs: 12, md: 6 }, content: [
+            { type: 'INPUT', key: 'i2', id: 'endDate', label: 'To', dataType: 'DATE', required: true },
+          ]}
+        ]},
+        { type: 'SELECT', key: 's1', id: 'type', label: 'Type', values: [
+          { id: 'vacation', displayName: 'Vacation' }, { id: 'sick', displayName: 'Sick leave' },
+          { id: 'special', displayName: 'Special leave' },
+        ]},
+        { type: 'TEXTAREA', key: 't1', id: 'reason', label: 'Reason', rows: 3 },
+        { type: 'READONLY_FIELD', key: 'ro1', id: 'remaining', label: 'Remaining vacation days' },
+      ]},
+      { type: 'FIELDSET', key: 'fs2', title: 'Status', content: [
+        { type: 'BADGE', key: 'b1', title: 'Requested', color: 'warning' },
+        { type: 'LABEL', key: 'l1', label: 'Awaiting manager approval.' },
+      ]},
+    ],
+    actions: [
+      { type: 'BUTTON', key: 'b1', id: 'submit', title: 'Submit Request', color: 'primary', default: true },
+      { type: 'BUTTON', key: 'b2', id: 'cancel', title: 'Cancel', color: 'secondary' },
+    ],
+    translations: {}, userAccess: { cancel: true }
+  }
+};
+
+const EXAMPLE_JOBMON = {
+  ui: {
+    title: 'jobs.monitor — ProjectForge',
+    uid: 'pf-jobs',
+    layout: [
+      { type: 'ALERT', key: 'a1', message: 'Background jobs running: 3 active, 12 completed today.', color: 'info' },
+      { type: 'SPACER', key: 'sp1', width: 8 },
+      { type: 'PROGRESS', key: 'p1', label: 'Database backup nightly', progress: 78, color: 'success' },
+      { type: 'PROGRESS', key: 'p2', label: 'Invoice PDF generation', progress: 45, color: 'primary' },
+      { type: 'PROGRESS', key: 'p3', label: 'Email newsletter queue', progress: 92, color: 'warning' },
+      { type: 'SPACER', key: 'sp2', width: 16 },
+      { type: 'FIELDSET', key: 'fs1', title: 'Completed Jobs', content: [
+        { type: 'BADGE', key: 'b1', title: 'Cache warmup — OK', color: 'success' },
+        { type: 'SPACER', key: 'sp3', width: 4 },
+        { type: 'BADGE', key: 'b2', title: 'Log rotation — OK', color: 'success' },
+        { type: 'SPACER', key: 'sp4', width: 4 },
+        { type: 'BADGE', key: 'b3', title: 'LDAP sync — OK', color: 'success' },
+      ]},
+    ],
+    actions: [
+      { type: 'BUTTON', key: 'b1', id: 'refresh', title: 'Refresh', color: 'primary' },
+      { type: 'BUTTON', key: 'b2', id: 'cancelAll', title: 'Cancel All', color: 'danger' },
+    ],
+    translations: {}, userAccess: { cancel: true }
+  }
+};
+
+const EXAMPLE_BOOK = {
+  ui: {
+    title: 'book.lend — ProjectForge',
+    uid: 'pf-book',
+    layout: [
+      { type: 'FIELDSET', key: 'fs1', title: 'Book Details', content: [
+        { type: 'INPUT', key: 'i1', id: 'title', label: 'Title', required: true },
+        { type: 'INPUT', key: 'i2', id: 'author', label: 'Author' },
+        { type: 'INPUT', key: 'i3', id: 'isbn', label: 'ISBN' },
+      ]},
+      { type: 'FIELDSET', key: 'fs2', title: 'Lending', content: [
+        { type: 'ROW', key: 'r1', content: [
+          { type: 'COL', key: 'c1', length: { xs: 12, md: 6 }, content: [
+            { type: 'SELECT', key: 's1', id: 'borrower', label: 'Borrower', values: [
+              { id: 'u1', displayName: 'Alice' }, { id: 'u2', displayName: 'Bob' },
+            ]},
+          ]},
+          { type: 'COL', key: 'c2', length: { xs: 12, md: 6 }, content: [
+            { type: 'INPUT', key: 'i4', id: 'dueDate', label: 'Due date', dataType: 'DATE' },
+          ]}
+        ]},
+        { type: 'CHECKBOX', key: 'cb1', id: 'reminder', label: 'Send reminder email' },
+        { type: 'ALERT', key: 'a1', message: 'This book is currently available.', color: 'success' },
+      ]},
+    ],
+    actions: [
+      { type: 'BUTTON', key: 'b1', id: 'lend', title: 'Lend Book', color: 'primary', default: true },
+      { type: 'BUTTON', key: 'b2', id: 'cancel', title: 'Cancel', color: 'secondary' },
+    ],
+    translations: {}, userAccess: { insert: true, cancel: true }
+  }
+};
   }
 }
 
@@ -390,10 +653,31 @@ function DynamicBadgeList({ badgeList }) {
 
 const EXAMPLE_BASE = location.pathname.replace(/\/playground\/.*$/, '');
 const PRESETS = {
-  'about-layout.json': { title: 'Static About Page', url: EXAMPLE_BASE + '/examples/about-layout.json' },
-  'feedback-form.json': { title: 'Feedback Form', url: EXAMPLE_BASE + '/examples/feedback-form.json' },
-  'registration-form.json': { title: 'Registration Form', url: EXAMPLE_BASE + '/examples/registration-form.json' },
-  'all-components.json': { title: 'All Components', url: EXAMPLE_BASE + '/examples/all-components.json' },
+  'about-layout.json': { title: 'About Page', url: EXAMPLE_BASE + '/examples/about-layout.json', source: 'https://github.com/MaurerAnton/projectforge-dynamiclayout/tree/master/projectforge-rest/src/main/java/.../rest/AboutPageRest.kt' },
+  'feedback-form.json': { title: 'Feedback Form', url: EXAMPLE_BASE + '/examples/feedback-form.json', source: 'examples/feedback-form.json' },
+  'registration-form.json': { title: 'Registration Form', url: EXAMPLE_BASE + '/examples/registration-form.json', source: 'examples/registration-form.json' },
+  'all-components.json': { title: 'All Components', url: EXAMPLE_BASE + '/examples/all-components.json', source: 'docs/projectforge-sdui-engine-docs/api-reference.md' },
+  'user-edit.json': { title: 'User Edit (PF)', source: 'projectforge-rest/.../rest/UserPagesRest.kt' },
+  'timesheet.json': { title: 'Timesheet Entry (PF)', source: 'projectforge-rest/.../rest/TimesheetPagesRest.kt' },
+  'skills.json': { title: 'Skills Matrix (PF)', source: 'projectforge-rest/.../rest/SkillsPagesRest.kt' },
+  'address.json': { title: 'Address Book (PF)', source: 'projectforge-rest/.../rest/AddressPagesRest.kt' },
+  'vacation.json': { title: 'Vacation Request (PF)', source: 'projectforge-rest/.../rest/VacationPagesRest.kt' },
+  'jobmon.json': { title: 'Job Monitor (PF)', source: 'projectforge-rest/.../rest/JobMonitorPagesRest.kt' },
+  'book.json': { title: 'Book Lend-Out (PF)', source: 'projectforge-rest/.../rest/BookPagesRest.kt' },
+};
+
+const PRESET_SOURCES = {
+  'about-layout.json': 'https://github.com/MaurerAnton/projectforge-dynamiclayout/tree/master/examples/about-layout.json',
+  'feedback-form.json': 'https://github.com/MaurerAnton/projectforge-dynamiclayout/tree/master/examples/feedback-form.json',
+  'registration-form.json': 'https://github.com/MaurerAnton/projectforge-dynamiclayout/tree/master/examples/registration-form.json',
+  'all-components.json': 'https://github.com/MaurerAnton/projectforge-dynamiclayout/blob/master/docs/projectforge-sdui-engine-docs/api-reference.md',
+  'user-edit.json': 'https://github.com/MaurerAnton/projectforge-dynamiclayout/blob/master/projectforge-rest/src/main/java/org/projectforge/rest/UserPagesRest.kt',
+  'timesheet.json': 'https://github.com/MaurerAnton/projectforge-dynamiclayout/blob/master/projectforge-rest/src/main/java/org/projectforge/rest/TimesheetPagesRest.kt',
+  'skills.json': 'https://github.com/MaurerAnton/projectforge-dynamiclayout/tree/master/projectforge-rest/src/main/java/org/projectforge/rest',
+  'address.json': 'https://github.com/MaurerAnton/projectforge-dynamiclayout/tree/master/projectforge-rest/src/main/java/org/projectforge/rest',
+  'vacation.json': 'https://github.com/MaurerAnton/projectforge-dynamiclayout/tree/master/projectforge-rest/src/main/java/org/projectforge/rest',
+  'jobmon.json': 'https://github.com/MaurerAnton/projectforge-dynamiclayout/tree/master/projectforge-rest/src/main/java/org/projectforge/rest',
+  'book.json': 'https://github.com/MaurerAnton/projectforge-dynamiclayout/tree/master/projectforge-rest/src/main/java/org/projectforge/rest',
 };
 
 const EXAMPLE_ABOUT = {
@@ -907,11 +1191,25 @@ function Playground() {
           return;
         }
       }
-      const examples = { 'about-layout.json': EXAMPLE_ABOUT, 'feedback-form.json': EXAMPLE_FORM, 'registration-form.json': EXAMPLE_REGISTRATION, 'all-components.json': EXAMPLE_ALL };
+      const examples = {
+        'about-layout.json': EXAMPLE_ABOUT, 'feedback-form.json': EXAMPLE_FORM,
+        'registration-form.json': EXAMPLE_REGISTRATION, 'all-components.json': EXAMPLE_ALL,
+        'user-edit.json': EXAMPLE_USER_EDIT, 'timesheet.json': EXAMPLE_TIMESHEET,
+        'skills.json': EXAMPLE_SKILLS, 'address.json': EXAMPLE_ADDRESS,
+        'vacation.json': EXAMPLE_VACATION, 'jobmon.json': EXAMPLE_JOBMON,
+        'book.json': EXAMPLE_BOOK,
+      };
       const ex = examples[name] || EXAMPLE_ABOUT;
       setJson(JSON.stringify(ex, null, 2));
     } catch (e) {
-      const examples = { 'about-layout.json': EXAMPLE_ABOUT, 'feedback-form.json': EXAMPLE_FORM, 'registration-form.json': EXAMPLE_REGISTRATION, 'all-components.json': EXAMPLE_ALL };
+      const examples = {
+        'about-layout.json': EXAMPLE_ABOUT, 'feedback-form.json': EXAMPLE_FORM,
+        'registration-form.json': EXAMPLE_REGISTRATION, 'all-components.json': EXAMPLE_ALL,
+        'user-edit.json': EXAMPLE_USER_EDIT, 'timesheet.json': EXAMPLE_TIMESHEET,
+        'skills.json': EXAMPLE_SKILLS, 'address.json': EXAMPLE_ADDRESS,
+        'vacation.json': EXAMPLE_VACATION, 'jobmon.json': EXAMPLE_JOBMON,
+        'book.json': EXAMPLE_BOOK,
+      };
       setJson(JSON.stringify(examples[name] || EXAMPLE_ABOUT, null, 2));
     }
   }, []);
@@ -1032,13 +1330,30 @@ function Playground() {
           onClick: () => switchMode('js'),
           style: { fontWeight: mode === 'js' ? 700 : 400, background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 14, color: mode === 'js' ? '#0d6efd' : '#6c757d' }
         }, '🟨 JS'),
-        React.createElement('select', { value: selectedPreset, onChange: e => loadPreset(e.target.value), style: { marginLeft: 'auto', fontSize: 13, padding: '2px 4px' } },
-          React.createElement('option', { value: 'about-layout.json' }, 'About Page'),
-          React.createElement('option', { value: 'feedback-form.json' }, 'Feedback Form'),
-          React.createElement('option', { value: 'registration-form.json' }, 'Registration Form'),
-          React.createElement('option', { value: 'all-components.json' }, 'All Components'),
+        React.createElement('select', { value: selectedPreset, onChange: e => loadPreset(e.target.value), style: { marginLeft: 8, fontSize: 13, padding: '2px 4px' } },
+          React.createElement('optgroup', { label: 'Examples' },
+            React.createElement('option', { value: 'about-layout.json' }, 'About Page'),
+            React.createElement('option', { value: 'feedback-form.json' }, 'Feedback Form'),
+            React.createElement('option', { value: 'registration-form.json' }, 'Registration Form'),
+            React.createElement('option', { value: 'all-components.json' }, 'All Components'),
+          ),
+          React.createElement('optgroup', { label: 'ProjectForge Interfaces' },
+            React.createElement('option', { value: 'user-edit.json' }, 'User Edit'),
+            React.createElement('option', { value: 'timesheet.json' }, 'Timesheet Entry'),
+            React.createElement('option', { value: 'skills.json' }, 'Skills Matrix'),
+            React.createElement('option', { value: 'address.json' }, 'Address Book'),
+            React.createElement('option', { value: 'vacation.json' }, 'Vacation Request'),
+            React.createElement('option', { value: 'jobmon.json' }, 'Job Monitor'),
+            React.createElement('option', { value: 'book.json' }, 'Book Lend-Out'),
+          ),
         ),
-        React.createElement('div', { style: { marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4 } },
+        React.createElement('div', { style: { marginLeft: 8, display: 'flex', alignItems: 'center', gap: 4 } },
+          React.createElement('a', {
+            href: PRESET_SOURCES[selectedPreset] || 'https://github.com/MaurerAnton/projectforge-dynamiclayout',
+            target: '_blank',
+            title: 'View source in ProjectForge',
+            style: { fontSize: 11, color: '#0d6efd', textDecoration: 'none', padding: '2px 8px', borderRadius: 3, border: '1px solid #0d6efd', whiteSpace: 'nowrap' }
+          }, '🔗 Source'),
           React.createElement('a', {
             href: 'https://github.com/MaurerAnton/projectforge-dynamiclayout/tree/master/docs/projectforge-sdui-engine-docs',
             target: '_blank',
