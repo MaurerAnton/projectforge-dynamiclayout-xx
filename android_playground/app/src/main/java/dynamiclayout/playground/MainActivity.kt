@@ -48,12 +48,13 @@ fun ContactsApp() {
                 == PackageManager.PERMISSION_GRANTED
         )
     }
+    var reloadKey by remember { mutableStateOf(0) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         hasPermission = granted
-        if (granted) loadKey++  // trigger reload
+        if (granted) reloadKey++
     }
 
     if (!hasPermission) {
@@ -71,8 +72,7 @@ fun ContactsApp() {
             }
         }
     } else {
-        var loadKey by remember { mutableIntStateOf(0) }
-        ContactsView(context, loadKey, onReload = { loadKey++ })
+        ContactsView(context, loadKey = reloadKey, onReload = { reloadKey++ })
     }
 }
 
@@ -147,10 +147,14 @@ fun ContactsView(context: android.content.Context, loadKey: Int = 0, onReload: (
         }
 
         (uiSpec["layout"] as? List<*>)?.forEach { el ->
-            RenderEl((el as? Map<String, Any?>) ?: emptyMap(), stateData) { updated ->
-                val s = updated["search"] as? String ?: ""
-                if (s != filter) filter = s
-            }
+            RenderEl(
+                (el as? Map<String, Any?>) ?: emptyMap(),
+                stateData,
+                onUpdate = { updated ->
+                    val s = updated["search"] as? String ?: ""
+                    if (s != filter) filter = s
+                }
+            )
         }
 
         val actions = uiSpec["actions"] as? List<*>
