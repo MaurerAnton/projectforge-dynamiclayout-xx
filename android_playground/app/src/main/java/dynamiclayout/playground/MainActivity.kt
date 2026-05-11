@@ -157,18 +157,17 @@ data class Contact(val id: String, val name: String, val phone: String = "")
             "Calls `moveToFirst()`, reads `_ID` + `DISPLAY_NAME` columns")
         24 -> StepScreen("Step 2d: Read all contacts", "Reading all contacts...", step, 25,
             "Loops through cursor, reads up to 20 contacts")
-        25 -> { // Show loaded
+        25 -> {
             if (err != null) {
                 Box(Modifier.fillMaxSize()) {
                     Column(Modifier.align(Alignment.Center).padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Error at step ${step-20}", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.headlineSmall)
+                        Text("Error at step", color = MaterialTheme.colorScheme.error)
                         Spacer(Modifier.height(8.dp)); Text(err ?: ""); Spacer(Modifier.height(16.dp))
                         Button(onClick = { err = null; contacts = emptyList(); step = 1 }) { Text("Back to start") }
                     }
                 }
-                return@Column
-            }
-            Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp)) {
+            } else {
+                Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text("Contacts (${contacts.size})", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                     OutlinedButton(onClick = onBack) { Text("Back") }
