@@ -86,14 +86,24 @@ fun ContactsView(context: android.content.Context, loadKey: Int = 0, onReload: (
     var errorMsg by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(loadKey) {
+        isLoading = true
+        errorMsg = null
         try {
             val result = withContext(Dispatchers.IO) {
-                ContactsLoader.load(context, "")
+                android.util.Log.d("DL", "ContactsLoader starting, context=$context")
+                val list = ContactsLoader.load(context, "")
+                android.util.Log.d("DL", "ContactsLoader done: ${list.size} contacts")
+                list
             }
             contacts = result
             isLoading = false
+        } catch (e: SecurityException) {
+            android.util.Log.e("DL", "Security exception loading contacts", e)
+            errorMsg = "Permission denied. Please grant contacts access in Settings."
+            isLoading = false
         } catch (e: Exception) {
-            errorMsg = e.message ?: "Failed"
+            android.util.Log.e("DL", "Error loading contacts", e)
+            errorMsg = "${e.javaClass.simpleName}: ${e.message}"
             isLoading = false
         }
     }
@@ -128,8 +138,17 @@ fun ContactsView(context: android.content.Context, loadKey: Int = 0, onReload: (
         else contacts.filter { it.name.contains(filter, ignoreCase = true) }
     }
 
-    val spec = remember(filtered) { ContactToJson.generate(filtered, filter) }
-    val uiSpec = spec["ui"] as? Map<String, Any?> ?: error("Bad spec")
+    val spec = remember(filtered) {
+        try {
+            ContactToJson.generate(filtered, filter)
+        } catch (e: Exception) {
+            android.util.Log.e("DL", "JSON generation error", e)
+            mapOf("ui" to mapOf("title" to "Error generating JSON", "layout" to listOf(
+                mapOf("type" to "ALERT", "key" to "err", "message" to "${e.message}", "color" to "danger")
+            )), "data" to emptyMap<String, Any>())
+        }
+    }
+    val uiSpec = spec["ui"] as? Map<String, Any?> ?: emptyMap()
     val uiData = spec["data"] as? Map<String, Any?> ?: emptyMap()
 
     val stateData = remember { mutableStateMapOf<String, Any?>() }
