@@ -231,21 +231,7 @@ private fun loadContactsWithEmails(ctx: android.content.Context): List<Contact> 
 }
 
 private fun loadContactsFull(ctx: android.content.Context): List<Contact> {
-    val list = loadContactsWithEmails(ctx).toMutableList()
-    val idx = list.associateBy { it.id }.toMutableMap()
-    // Org
-    ctx.contentResolver.query(android.provider.ContactsContract.CommonDataKinds.Organization.CONTENT_URI, null, null, null, null)?.use { cur ->
-        val idIdx = cur.getColumnIndex(android.provider.ContactsContract.CommonDataKinds.Organization.CONTACT_ID)
-        val orgIdx = cur.getColumnIndex(android.provider.ContactsContract.CommonDataKinds.Organization.COMPANY)
-        if (idIdx >= 0 && orgIdx >= 0) while (cur.moveToNext()) { val cid = cur.getString(idIdx) ?: continue; idx[cid]?.let { c -> if (c.org.isBlank()) idx[cid] = c.copy(org = cur.getString(orgIdx) ?: "") } }
-    }
-    // Address
-    ctx.contentResolver.query(android.provider.ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_URI, null, null, null, null)?.use { cur ->
-        val idIdx = cur.getColumnIndex(android.provider.ContactsContract.CommonDataKinds.StructuredPostal.CONTACT_ID)
-        val addrIdx = cur.getColumnIndex(android.provider.ContactsContract.CommonDataKinds.StructuredPostal.FORMATTED_ADDRESS)
-        if (idIdx >= 0 && addrIdx >= 0) while (cur.moveToNext()) { val cid = cur.getString(idIdx) ?: continue; idx[cid]?.let { c -> if (c.addr.isBlank()) idx[cid] = c.copy(addr = cur.getString(addrIdx) ?: "") } }
-    }
-    return idx.values.toList()
+    return loadContactsWithEmails(ctx)
 }
 
 // ── DynamicLayout Renderer ──
