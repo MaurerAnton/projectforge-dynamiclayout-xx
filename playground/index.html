@@ -660,13 +660,13 @@ const PRESETS = {
   'feedback-form.json': { title: 'Feedback Form', url: EXAMPLE_BASE + '/examples/feedback-form.json', source: 'examples/feedback-form.json' },
   'registration-form.json': { title: 'Registration Form', url: EXAMPLE_BASE + '/examples/registration-form.json', source: 'examples/registration-form.json' },
   'all-components.json': { title: 'All Components', url: EXAMPLE_BASE + '/examples/all-components.json', source: 'docs/projectforge-sdui-engine-docs/api-reference.md' },
-  'user-edit.json': { title: 'User Edit (PF)', source: 'projectforge-rest/.../rest/UserPagesRest.kt' },
-  'timesheet.json': { title: 'Timesheet Entry (PF)', source: 'projectforge-rest/.../rest/TimesheetPagesRest.kt' },
-  'skills.json': { title: 'Skills Matrix (PF)', source: 'projectforge-rest/.../rest/SkillsPagesRest.kt' },
-  'address.json': { title: 'Address Book (PF)', source: 'projectforge-rest/.../rest/AddressPagesRest.kt' },
-  'vacation.json': { title: 'Vacation Request (PF)', source: 'projectforge-rest/.../rest/VacationPagesRest.kt' },
-  'jobmon.json': { title: 'Job Monitor (PF)', source: 'projectforge-rest/.../rest/JobMonitorPagesRest.kt' },
-  'book.json': { title: 'Book Lend-Out (PF)', source: 'projectforge-rest/.../rest/BookPagesRest.kt' },
+  'user-edit.json': { title: 'User Edit (PF)', url: null, source: 'projectforge-rest/.../rest/UserPagesRest.kt' },
+  'timesheet.json': { title: 'Timesheet Entry (PF)', url: null, source: 'projectforge-rest/.../rest/TimesheetPagesRest.kt' },
+  'skills.json': { title: 'Skills Matrix (PF)', url: null, source: 'projectforge-rest/.../rest/SkillsPagesRest.kt' },
+  'address.json': { title: 'Address Book (PF)', url: null, source: 'projectforge-rest/.../rest/AddressPagesRest.kt' },
+  'vacation.json': { title: 'Vacation Request (PF)', url: null, source: 'projectforge-rest/.../rest/VacationPagesRest.kt' },
+  'jobmon.json': { title: 'Job Monitor (PF)', url: null, source: 'projectforge-rest/.../rest/JobMonitorPagesRest.kt' },
+  'book.json': { title: 'Book Lend-Out (PF)', url: null, source: 'projectforge-rest/.../rest/BookPagesRest.kt' },
 };
 
 const PRESET_SOURCES = {
@@ -1186,7 +1186,7 @@ function Playground() {
     const jsExample = JS_SOURCES[name] || JS_ABOUT;
     setJsCode(jsExample);
     try {
-      if (PRESETS[name]) {
+      if (PRESETS[name] && PRESETS[name].url) {
         const resp = await fetch(PRESETS[name].url);
         if (resp.ok) {
           const text = await resp.text();
