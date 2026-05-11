@@ -168,10 +168,18 @@ data class Contact(
                     OutlinedButton(onClick = onBack) { Text("Back") }
                 }
                 Spacer(Modifier.height(12.dp))
-                contacts.take(20).forEach { c ->
+                contacts.take(100).forEach { c ->
                     Card(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
                         Column(Modifier.padding(12.dp)) {
-                            Text(c.name, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyLarge)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (c.photo != null) {
+                                    try {
+                                        val bmp = remember(c.photo) { BitmapFactory.decodeByteArray(c.photo, 0, c.photo!!.size) }
+                                        if (bmp != null) { Image(bitmap = bmp.asImageBitmap(), contentDescription = null, modifier = Modifier.size(40.dp).clip(CircleShape)); Spacer(Modifier.width(8.dp)) }
+                                    } catch (_: Exception) {}
+                                }
+                                Text(c.name, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyLarge)
+                            }
                             if (c.phone.isNotBlank()) Text("📞 ${c.phone}", style = MaterialTheme.typography.bodySmall)
                             if (c.email.isNotBlank()) Text("✉ ${c.email}", style = MaterialTheme.typography.bodySmall)
                             if (c.org.isNotBlank()) Text("🏢 ${c.org}", style = MaterialTheme.typography.bodySmall)
@@ -193,7 +201,7 @@ private fun loadContactsBasic(ctx: android.content.Context): List<Contact> {
         val idIdx = it.getColumnIndex(android.provider.ContactsContract.Contacts._ID)
         val nmIdx = it.getColumnIndex(android.provider.ContactsContract.Contacts.DISPLAY_NAME)
         if (idIdx < 0 || nmIdx < 0) return list
-        while (it.moveToNext() && list.size < 20) list.add(Contact(it.getString(idIdx) ?: "", it.getString(nmIdx) ?: "?"))
+        while (it.moveToNext() && list.size < 100) list.add(Contact(it.getString(idIdx) ?: "", it.getString(nmIdx) ?: "?"))
     }
     return list
 }
