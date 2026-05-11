@@ -120,10 +120,14 @@ data class Contact(val id: String, val name: String, val phone: String = "")
     var err by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(step) {
-        if (step != 2) return@LaunchedEffect
+        if (step < 21 || step > 24) return@LaunchedEffect
         try {
-            val r = withContext(Dispatchers.IO) { loadContacts(ctx) }
-            contacts = r; step = 3
+            when (step) {
+                21 -> { /* just create empty list */ contacts = emptyList(); step = 22 }
+                22 -> { /* query but don't read */ withContext(Dispatchers.IO) { ctx.contentResolver.query(android.provider.ContactsContract.Contacts.CONTENT_URI, null, null, null, null)?.close() }; step = 23 }
+                23 -> { /* read 1 contact */ val list = mutableListOf<Contact>(); val c = withContext(Dispatchers.IO) { ctx.contentResolver.query(android.provider.ContactsContract.Contacts.CONTENT_URI, null, null, null, null) }; c?.use { val idIdx = it.getColumnIndex(android.provider.ContactsContract.Contacts._ID); val nmIdx = it.getColumnIndex(android.provider.ContactsContract.Contacts.DISPLAY_NAME); if (idIdx >= 0 && nmIdx >= 0 && it.moveToFirst()) list.add(Contact(it.getString(idIdx)?:"", it.getString(nmIdx)?:"?")) }; contacts = list; step = 24 }
+                24 -> { /* read all */ val r = withContext(Dispatchers.IO) { loadContacts(ctx) }; contacts = r; step = 25 }
+            }
         } catch (t: Throwable) { err = "${t.javaClass.simpleName}: ${t.message}" }
     }
 
@@ -137,8 +141,51 @@ data class Contact(val id: String, val name: String, val phone: String = "")
                         Column(Modifier.padding(12.dp)) {
                             Text("Test Contact", fontWeight = FontWeight.SemiBold)
                             Text("Phone: +1 234 567 890", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
-                            Text("Email: test@example.com", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
                         }
+                    }
+                    Spacer(Modifier.height(24.dp))
+                    Button(onClick = { step = 21 }) { Text("Step 2: Load contacts (debug)") }
+                    OutlinedButton(onClick = onBack, modifier = Modifier.padding(top = 8.dp)) { Text("Back") }
+                }
+            }
+        }
+        21 -> stepScreen("Step 2a: Create empty list", "Creating empty list...", step, 22,
+            "Creates `emptyList<Contact>()` — no ContentResolver yet")
+        22 -> stepScreen("Step 2b: Open cursor (no read)", "Opening ContentResolver query...", step, 23,
+            "Calls `contentResolver.query()` + immediately `close()` — no column access")
+        23 -> stepScreen("Step 2c: Read 1st contact", "Reading first contact from cursor...", step, 24,
+            "Calls `moveToFirst()`, reads `_ID` + `DISPLAY_NAME` columns")
+        24 -> stepScreen("Step 2d: Read all contacts", "Reading all contacts...", step, 25,
+            "Loops through cursor, reads up to 20 contacts")
+        25 -> { // Show loaded
+            if (err != null) {
+                Box(Modifier.fillMaxSize()) {
+                    Column(Modifier.align(Alignment.Center).padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("Error at step ${step-20}", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.headlineSmall)
+                        Spacer(Modifier.height(8.dp)); Text(err ?: ""); Spacer(Modifier.height(16.dp))
+                        Button(onClick = { err = null; contacts = emptyList(); step = 1 }) { Text("Back to start") }
+                    }
+                }
+                return@Column
+            }
+            Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp)) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("Contacts (${contacts.size})", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                    OutlinedButton(onClick = onBack) { Text("Back") }
+                }
+                Spacer(Modifier.height(12.dp))
+                contacts.take(20).forEach { c ->
+                    Card(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+                        Column(Modifier.padding(12.dp)) {
+                            Text(c.name, fontWeight = FontWeight.SemiBold)
+                            if (c.phone.isNotBlank()) Text("Phone: ${c.phone}", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                        }
+                    }
+                }
+            }
+        }
+        else -> {}
+    }
                     }
                     Spacer(Modifier.height(24.dp))
                     Button(onClick = { step = 2 }) { Text("Step 2: Load real contacts") }
