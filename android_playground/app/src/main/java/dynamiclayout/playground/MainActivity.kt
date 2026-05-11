@@ -104,43 +104,72 @@ fun ContactsView(context: android.content.Context, loadKey: Int, onReload: () ->
     }
 
     // ── Contacts render ──
+    var step by remember { mutableStateOf(1) } // 1=fake, 2=load, 3=show
+
+    if (step == 1) {
+        // Render a hardcoded contact first — proves rendering works
+        Box(Modifier.fillMaxSize().padding(32.dp)) {
+            Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("Step 1: Render test", style = MaterialTheme.typography.headlineSmall)
+                Spacer(Modifier.height(16.dp))
+                Card(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+                    Column(Modifier.padding(12.dp)) {
+                        Text("Test Contact", fontWeight = FontWeight.SemiBold)
+                        ContactRow("Phone", "+1 234 567 890")
+                        ContactRow("Email", "test@example.com")
+                    }
+                }
+                Spacer(Modifier.height(24.dp))
+                Button(onClick = { step = 2 }) { Text("Step 2: Load real contacts") }
+                OutlinedButton(onClick = { mode = "menu" }, modifier = Modifier.padding(top = 8.dp)) { Text("Back to menu") }
+            }
+        }
+        return
+    }
+
+    if (step == 2) {
+    if (step == 2) {
+        var contacts by remember { mutableStateOf<List<Contact>>(emptyList()) }
+        var filter by remember { mutableStateOf("") }
+        var isLoading by remember { mutableStateOf(true) }
+        var errorMsg by remember { mutableStateOf<String?>(null) }
+
+        LaunchedEffect(loadKey) {
+            isLoading = true; errorMsg = null
+            try {
+                val result = withContext(Dispatchers.IO) { Contacts.load(context) }
+                contacts = result
+                step = 3
+            } catch (t: Throwable) {
+                errorMsg = "${t.javaClass.simpleName}: ${t.message}"
+            }
+            isLoading = false
+        }
+
+        if (isLoading) {
+            Box(Modifier.fillMaxSize()) {
+                Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator(); Spacer(Modifier.height(8.dp)); Text("Loading contacts...")
+                }
+            }
+            return
+        }
+        if (errorMsg != null) {
+            Box(Modifier.fillMaxSize()) {
+                Column(Modifier.align(Alignment.Center).padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("Error", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.headlineSmall)
+                    Spacer(Modifier.height(8.dp)); Text(errorMsg ?: ""); Spacer(Modifier.height(16.dp))
+                    Button(onClick = { step = 1 }) { Text("Back to test") }
+                }
+            }
+            return
+        }
+        return
+    }
+
+    // Step 3: show loaded contacts
     var contacts by remember { mutableStateOf<List<Contact>>(emptyList()) }
     var filter by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(true) }
-    var errorMsg by remember { mutableStateOf<String?>(null) }
-
-    LaunchedEffect(loadKey) {
-        isLoading = true; errorMsg = null
-        try {
-            val result = withContext(Dispatchers.IO) { Contacts.load(context) }
-            contacts = result
-        } catch (t: Throwable) {
-            errorMsg = "${t.javaClass.simpleName}: ${t.message}"
-        }
-        isLoading = false
-    }
-
-    if (isLoading) {
-        Box(Modifier.fillMaxSize()) {
-            Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
-                CircularProgressIndicator(); Spacer(Modifier.height(8.dp))
-                Text("Loading contacts..."); Spacer(Modifier.height(16.dp))
-                OutlinedButton(onClick = { mode = "menu" }) { Text("Cancel") }
-            }
-        }
-        return
-    }
-
-    if (errorMsg != null) {
-        Box(Modifier.fillMaxSize()) {
-            Column(Modifier.align(Alignment.Center).padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Error loading contacts", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.headlineSmall)
-                Spacer(Modifier.height(8.dp)); Text(errorMsg ?: ""); Spacer(Modifier.height(16.dp))
-                Button(onClick = { mode = "demo" }) { Text("Show Demo Instead") }
-            }
-        }
-        return
-    }
 
     val filtered = remember(filter, contacts) {
         if (filter.isBlank()) contacts else contacts.filter { it.name.contains(filter, ignoreCase = true) }
