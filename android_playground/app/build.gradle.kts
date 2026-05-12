@@ -11,8 +11,8 @@ android {
         applicationId = "dynamiclayout.playground"
         minSdk = 26
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = (project.findProperty("versionCode") as? String)?.toInt() ?: 1
+        versionName = (project.findProperty("versionName") as? String) ?: "1.0-dev"
 
         ndk {
             abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64")

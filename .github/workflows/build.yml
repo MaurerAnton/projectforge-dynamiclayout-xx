@@ -172,7 +172,7 @@ jobs:
         run: gradle wrapper --gradle-version 8.4
 
       - name: Build debug APK
-        run: ./gradlew assembleDebug
+        run: ./gradlew assembleDebug -PversionCode=${{ github.run_number }} -PversionName="1.0-b${{ github.run_number }}"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4

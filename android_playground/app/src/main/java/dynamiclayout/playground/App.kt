@@ -1,7 +1,9 @@
 package dynamiclayout.playground
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -33,19 +35,32 @@ import androidx.core.content.ContextCompat
 
 @Composable fun MainScreen(ctx: android.content.Context, key: Int, reload: () -> Unit) {
     var page by remember { mutableStateOf("menu") }
+
+    val vc = try { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionCode } catch (_: Exception) { 0 }
+    val vn = try { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName } catch (_: Exception) { "?" }
+    val APK_URL = "https://raw.githubusercontent.com/MaurerAnton/projectforge-dynamiclayout-xx/master/android_playground/app-debug.apk"
+
     if (page == "menu") {
         Box(Modifier.fillMaxSize()) {
             Column(Modifier.align(Alignment.Center).padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("DynamicLayout Demo", style = MaterialTheme.typography.headlineSmall); Spacer(Modifier.height(16.dp))
-                Text("Renderer is working. Choose:", style = MaterialTheme.typography.bodyMedium); Spacer(Modifier.height(24.dp))
-                Button(onClick = { page = "demo" }) { Text("Show Demo Render") }; Spacer(Modifier.height(12.dp))
-                Button(onClick = { page = "contacts" }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF198754))) { Text("Render My Contacts (debug)") }
+                Text("DynamicLayout Demo", style = MaterialTheme.typography.headlineSmall)
+                Spacer(Modifier.height(4.dp))
+                Text("v$vn (build $vc)", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                Spacer(Modifier.height(16.dp))
+                Text("Renderer is working. Choose:", style = MaterialTheme.typography.bodyMedium)
+                Spacer(Modifier.height(24.dp))
+                Button(onClick = { page = "demo" }) { Text("Show Demo Render") }
+                Spacer(Modifier.height(12.dp))
+                Button(onClick = { page = "contacts" }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF198754))) { Text("Render My Contacts") }
             }
-            Text("build 37", style = MaterialTheme.typography.labelSmall, color = Color.Gray,
-                modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp))
+            Column(Modifier.align(Alignment.BottomCenter).padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                TextButton(onClick = { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(APK_URL))) }) { Text("Update APK", style = MaterialTheme.typography.labelSmall, color = Color(0xFF0D6EFD)) }
+                Text("v$vn (build $vc)", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+            }
         }
         return
     }
     if (page == "demo") { DemoPage { page = "menu" }; return }
     if (page == "contacts") { ContactsPage(ctx, { page = "menu" }, reload); return }
 }
+
